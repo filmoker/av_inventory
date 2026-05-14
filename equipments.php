@@ -260,7 +260,6 @@ $(document).ready(function() {
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
         "columnDefs": [
-            // 🌟 แก้ตรงนี้จาก 11 เป็น 12 เนื่องจากเรามีจำนวนคอลัมน์เพิ่มขึ้น 1 คอลัมน์
             { "orderable": false, "targets": [0, 12] } 
         ]
     });
