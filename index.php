@@ -14,20 +14,21 @@ $current_loc = isset($_GET['location']) ? $_GET['location'] : '';
 $where_location = "";
 if ($current_loc != "") {
     $current_loc_esc = $conn->real_escape_string($current_loc);
-    $where_location = " AND campus = '$current_loc_esc'"; 
+    $where_location = " AND e.campus = '$current_loc_esc'"; 
 }
 
 // 4. คำสั่ง SQL สำหรับนับจำนวนครุภัณฑ์
-$sql_total = "SELECT COUNT(*) as count FROM equipments WHERE 1=1 $where_location";
-$sql_ready = "SELECT COUNT(*) as count FROM equipments WHERE status = 'พร้อมใช้งาน' $where_location";
-$sql_repair = "SELECT COUNT(*) as count FROM equipments WHERE status = 'กำลังซ่อม' $where_location";
-$sql_broken = "SELECT COUNT(*) as count FROM equipments WHERE status = 'ชำรุด' $where_location";
+$sql_total = "SELECT COUNT(*) as count FROM equipments e WHERE 1=1 $where_location";
+$sql_ready = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'พร้อมใช้งาน' $where_location";
+$sql_repair = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'กำลังซ่อม' $where_location";
+$sql_broken = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'ชำรุด' $where_location";
 
-// 5. ดึงข้อมูลครุภัณฑ์ที่ชำรุดหรือกำลังซ่อม (ดึง brand, model และ status_updated_at มาด้วย)
-$sql_alerts = "SELECT equipment_code, equipment_name, brand, model, status, status_updated_at 
-               FROM equipments 
-               WHERE status IN ('ชำรุด', 'กำลังซ่อม') $where_location 
-               ORDER BY id";
+// 5. ดึงข้อมูลครุภัณฑ์ที่ชำรุดหรือกำลังซ่อม 
+$sql_alerts = "SELECT e.equipment_code, e.equipment_name, e.brand, e.model, e.status, e.status_updated_at, l.location_name 
+               FROM equipments e
+               LEFT JOIN locations l ON e.location_id = l.id
+               WHERE e.status IN ('ชำรุด', 'กำลังซ่อม') $where_location 
+               ORDER BY e.id";
 $result_alerts = $conn->query($sql_alerts);
 
 // ดึงข้อมูลออกมาเก็บในตัวแปร
@@ -171,6 +172,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                                         <tr>
                                             <th>รหัสครุภัณฑ์</th>
                                             <th>ชื่อ/รุ่นอุปกรณ์</th>
+                                            <th>สถานที่จัดเก็บ</th> 
                                             <th class="text-center">สถานะ</th>
                                         </tr>
                                     </thead>
@@ -183,6 +185,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                                                     <div><?php echo $row['equipment_name']; ?></div>
                                                     <small class="text-muted"><?php echo ($row['brand'] ?: '-') . " / " . ($row['model'] ?: '-'); ?></small>
                                                 </td>
+                                                <td><small class="text-secondary fw-semibold"><?php echo $row['location_name'] ?: '-'; ?></small></td>
                                                 <td class="text-center">
                                                     <span class="badge <?php echo ($row['status'] == 'ชำรุด') ? 'bg-danger' : 'bg-warning text-dark'; ?>">
                                                         <?php echo $row['status']; ?>
@@ -206,7 +209,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                                             </tr>
                                             <?php endwhile; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="3" class="text-center text-success py-4">ไม่มีรายการที่ต้องติดตามในขณะนี้</td></tr>
+                                            <tr><td colspan="4" class="text-center text-success py-4">ไม่มีรายการที่ต้องติดตามในขณะนี้</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
