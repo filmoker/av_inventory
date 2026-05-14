@@ -155,6 +155,7 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                     <th>อายุ (ปี)</th>
                                     <th>วันที่รับ</th>
                                     <th>วิทยาเขต</th>
+                                    <th>สถานที่จัดเก็บ</th>
                                     <th>ผู้ครอบครอง</th>
                                     <th>สถานะ</th>
                                     <th>หมายเหตุ</th>
@@ -185,6 +186,8 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                             <?php echo htmlspecialchars($row['campus']) ?: '-'; ?>
                                         </span>
                                     </td>
+                                    <td class="text-center text-secondary"><?php echo htmlspecialchars($row['location_name']) ?: '-'; ?></td>
+                                    
                                     <td class="text-center fw-bold"><?php echo htmlspecialchars($row['responsible_person']) ?: '-'; ?></td>
                                     <td class="text-center">
                                         <span class="badge px-2 <?php 
@@ -257,7 +260,8 @@ $(document).ready(function() {
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
         "columnDefs": [
-            { "orderable": false, "targets": [0, 11] } 
+            // 🌟 แก้ตรงนี้จาก 11 เป็น 12 เนื่องจากเรามีจำนวนคอลัมน์เพิ่มขึ้น 1 คอลัมน์
+            { "orderable": false, "targets": [0, 12] } 
         ]
     });
 });
