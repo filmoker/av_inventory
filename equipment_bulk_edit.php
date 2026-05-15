@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_update'])) {
         }
     }
 
-    // 🌟 ระบบจัดการอัปโหลดรูปภาพ (แก้ไขหลายรายการ) 🌟
+    //  ระบบจัดการอัปโหลดรูปภาพ (แก้ไขหลายรายการ) 
     if (isset($_FILES['equipment_image']) && $_FILES['equipment_image']['error'] == 0) {
         $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $ext = strtolower(pathinfo($_FILES['equipment_image']['name'], PATHINFO_EXTENSION));
