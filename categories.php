@@ -1,5 +1,4 @@
 <?php
-
 require_once 'db_connect.php';
 
 // จัดการการเพิ่มข้อมูลใหม่ (เมื่อมีการ Submit ฟอร์มเพิ่มหมวดหมู่)
@@ -16,6 +15,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_category'])) {
 // ดึงข้อมูลหมวดหมู่ทั้งหมดมาแสดง
 $sql = "SELECT * FROM categories ORDER BY id ASC";
 $result = $conn->query($sql);
+
+// 🌟 เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar 
+$units = [];
+$units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
+if ($units_result && $units_result->num_rows > 0) {
+    while($row = $units_result->fetch_assoc()) {
+        $units[] = $row;
+    }
+} else {
+    $units = [
+        ['id' => 1, 'unit_name' => 'หน่วยโครงสร้างพื้นฐานเทคโนโลยีสารสนเทศดิจิทัล'],
+        ['id' => 2, 'unit_name' => 'หน่วยบริการสื่อและมัลติมีเดีย']
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,10 +45,11 @@ $result = $conn->query($sql);
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
         
-        /*  ล็อกความกว้าง Sidebar ไว้ที่ 220px */
+        /* ล็อกความกว้าง Sidebar ไว้ที่ 220px */
         .sidebar { background-color: #1e2b3c; min-height: 100vh; color: #fff; width: 220px; }
         .sidebar a { color: #c2c7d0; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #2b3c53; }
         .sidebar a:hover, .sidebar a.active { background-color: #2b3c53; color: #fff; }
+        .hover-white:hover { color: #ffffff !important; }
 
         /* ปรับระยะห่าง DataTables ให้สวยงาม ไม่ชิดขอบ */
         div.dataTables_wrapper div.row:first-child { padding: 15px 20px 10px 20px; margin: 0; }
@@ -49,13 +63,48 @@ $result = $conn->query($sql);
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                </a>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
-                <a href="equipments.php"><i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์</a>
+                
+                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white-50 hover-white">
+                    <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
+                </a>
+                
+                <div class="collapse" id="equipmentMenu" style="background-color: #16202c;">
+                    <a href="#menuPsm" data-bs-toggle="collapse" class="text-white-50 hover-white d-block" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        ประสานมิตร <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuPsm" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=ประสานมิตร" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=ประสานมิตร&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <a href="#menuOkr" data-bs-toggle="collapse" class="text-white-50 hover-white d-block mt-1" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        องครักษ์ <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuOkr" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=องครักษ์" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=องครักษ์&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
-                <a href="categories.php" class="active"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="categories.php" class="text-white fw-bold active"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
                 <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
