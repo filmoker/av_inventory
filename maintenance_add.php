@@ -58,6 +58,7 @@ $result_equip = $conn->query($sql_equip);
                 <a href="maintenance.php" class="active"><i class="fas fa-tools me-2"></i> ประวัติซ่อมบำรุง</a>
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="units.php"><i class="fas fa-layer-group me-2"></i> จัดการหน่วยงาน</a>
                 <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
         </div>
