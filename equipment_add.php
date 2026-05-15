@@ -1,54 +1,63 @@
 <?php
 require_once 'db_connect.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $equipment_code = $_POST['equipment_code'];
+$cat_result = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
+$loc_result = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
+
+// ดึงข้อมูลยี่ห้อ (Brand) ทั้งหมดที่มีในระบบ (ไม่ซ้ำกัน) และเรียง A-Z
+$brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
+$brand_result = $conn->query($brand_query);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $equipment_code_num = trim($_POST['equipment_code_number']);
+    $equipment_code = $conn->real_escape_string('สห.' . $equipment_code_num);
+    $equipment_name = $conn->real_escape_string(trim($_POST['equipment_name']));
     
-    $check_sql = "SELECT id FROM equipments WHERE equipment_code = '$equipment_code'";
-    $check_result = $conn->query($check_sql);
-
-    if ($check_result->num_rows > 0) {
-        echo "<script>alert('❌ บันทึกไม่ได้: รหัสครุภัณฑ์ \"$equipment_code\" มีอยู่ในระบบแล้วกรุณาตรวจสอบอีกครั้ง'); window.history.back();</script>";
-        exit();
+    $brand_val = $_POST['brand_select'];
+    if ($brand_val === 'other') {
+        $brand_val = trim($_POST['brand_other']); 
     }
-
-    $equipment_name = $_POST['equipment_name'];
-    $brand = $_POST['brand'];
-    $model = $_POST['model'];
-    $serial_number = $_POST['serial_number'];
-    $category_id = $_POST['category_id'];
-    $location_id = $_POST['location_id'];
-    $campus = $_POST['campus']; 
-    $status = $_POST['status'];
-    $entry_date = $_POST['entry_date'];
-    $remark = isset($_POST['remark']) ? $_POST['remark'] : '';
-
-    // จัดการวันที่อัปเดตสถานะ
-    if ($status == 'พร้อมใช้งาน') {
-        $status_updated_at_sql = "NULL"; 
+    $brand = $conn->real_escape_string($brand_val);
+    
+    $model = $conn->real_escape_string(trim($_POST['model']));
+    $serial_number = $conn->real_escape_string(trim($_POST['serial_number']));
+    $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : "NULL";
+    $location_id = !empty($_POST['location_id']) ? $_POST['location_id'] : "NULL";
+    $campus = $conn->real_escape_string($_POST['campus']);
+    $responsible_person = $conn->real_escape_string(trim($_POST['responsible_person']));
+    $status = $conn->real_escape_string($_POST['status']);
+    
+    if ($status == 'ชำรุด' || $status == 'กำลังซ่อม') {
+        $status_updated_at = !empty($_POST['status_updated_at']) ? "'".$conn->real_escape_string($_POST['status_updated_at'])."'" : "NULL";
     } else {
-        $date_val = !empty($_POST['status_updated_at']) ? $_POST['status_updated_at'] : date('Y-m-d');
-        $time_val = date('H:i:s'); // แอบเพิ่มเวลาให้ตรงกับตอนบันทึก
-        $status_updated_at_sql = "'" . $conn->real_escape_string($date_val . ' ' . $time_val) . "'";
+        $status_updated_at = "NULL";
     }
+    
+    $entry_date = !empty($_POST['entry_date']) ? "'".$conn->real_escape_string($_POST['entry_date'])."'" : "NULL";
+    $remark = $conn->real_escape_string(trim($_POST['remark']));
 
-    // 🌟 เพิ่ม created_at และ NOW() ลงไปในคำสั่งบันทึก
-    $sql_insert = "INSERT INTO equipments (equipment_code, equipment_name, brand, model, serial_number, category_id, location_id, campus, status, status_updated_at, entry_date, remark, created_at) 
-                   VALUES ('$equipment_code', '$equipment_name', '$brand', '$model', '$serial_number', '$category_id', '$location_id', '$campus', '$status', $status_updated_at_sql, '$entry_date', '$remark', NOW())";
+    $check_sql = "SELECT id FROM equipments WHERE equipment_code = '$equipment_code'";
+    if ($conn->query($check_sql)->num_rows > 0) {
+        $error = "รหัสครุภัณฑ์นี้มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น";
+    } else {
+        $sql = "INSERT INTO equipments (
+                    equipment_code, equipment_name, brand, model, serial_number, 
+                    category_id, location_id, campus, responsible_person, status, 
+                    status_updated_at, entry_date, remark, created_at, updated_at
+                ) VALUES (
+                    '$equipment_code', '$equipment_name', '$brand', '$model', '$serial_number', 
+                    $category_id, $location_id, '$campus', '$responsible_person', '$status', 
+                    $status_updated_at, $entry_date, '$remark', NOW(), NOW()
+                )";
 
-    try {
-        if ($conn->query($sql_insert) === TRUE) {
-            header("Location: equipments.php?status=success");
+        if ($conn->query($sql) === TRUE) {
+            header("Location: equipments.php?msg=add_success");
             exit();
+        } else {
+            $error = "เกิดข้อผิดพลาด: " . $conn->error;
         }
-    } catch (mysqli_sql_exception $e) {
-        echo "<script>alert('เกิดข้อผิดพลาดระบบฐานข้อมูล: " . $e->getMessage() . "'); window.history.back();</script>";
-        exit();
     }
 }
-
-$result_categories = $conn->query("SELECT * FROM categories");
-$result_locations = $conn->query("SELECT * FROM locations");
 ?>
 
 <!DOCTYPE html>
@@ -62,26 +71,31 @@ $result_locations = $conn->query("SELECT * FROM locations");
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
-        
-        /* 🌟 ล็อกความกว้าง Sidebar ไว้ที่ 220px */
         .sidebar { background-color: #1e2b3c; min-height: 100vh; color: #fff; width: 220px; }
         .sidebar a { color: #c2c7d0; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #2b3c53; }
         .sidebar a:hover, .sidebar a.active { background-color: #2b3c53; color: #fff; }
-        .form-label { font-weight: 500; }
+        .hover-white:hover { color: #ffffff !important; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid p-0">
     <div class="d-flex flex-nowrap">
-        
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                <a href="index.php" class="text-white text-decoration-none d-block">
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                </a>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
-                <a href="equipments.php" class="active"><i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์</a>
+                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white fw-bold active">
+                    <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
+                </a>
+                <div class="collapse show" id="equipmentMenu" style="background-color: #16202c;">
+                    <a href="equipments.php?location=ประสานมิตร" class="text-white-50 hover-white" style="padding-left: 45px;">มศว ประสานมิตร</a>
+                    <a href="equipments.php?location=องครักษ์" class="text-white-50 hover-white" style="padding-left: 45px;">มศว องครักษ์</a>
+                </div>
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
@@ -89,142 +103,173 @@ $result_locations = $conn->query("SELECT * FROM locations");
             </nav>
         </div>
 
-        <div class="p-4 bg-light flex-grow-1" style="min-width: 0; overflow-x: auto;">
-            <div class="mx-auto" style="max-width: 800px;">
-                <div class="mb-4 mt-3">
-                    <h4>ขึ้นทะเบียนครุภัณฑ์ใหม่</h4>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="equipments.php">รายการครุภัณฑ์</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">เพิ่มครุภัณฑ์ใหม่</li>
-                        </ol>
-                    </nav>
+        <div class="col-md-10 p-4 bg-light flex-grow-1" style="min-width: 0;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4><i class="fas fa-plus-circle text-primary me-2"></i> ขึ้นทะเบียนครุภัณฑ์ใหม่</h4>
+                <a href="equipments.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> กลับหน้ารายการ</a>
+            </div>
+
+            <?php if(isset($error)): ?>
+                <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?php echo $error; ?></div>
+            <?php endif; ?>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form action="equipment_add.php" method="POST">
+                        <h5 class="border-bottom pb-2 mb-4 text-primary">ข้อมูลพื้นฐาน</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="equipment_code_number" class="form-label">รหัสครุภัณฑ์ <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-dark fw-bold">สห.</span>
+                                    <input type="text" class="form-control" id="equipment_code_number" name="equipment_code_number" required placeholder="กรอกเฉพาะตัวเลข เช่น 330000010041">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="equipment_name" class="form-label">ชื่อครุภัณฑ์ <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="equipment_name" name="equipment_name" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="brand_select" class="form-label">ยี่ห้อ (Brand)</label>
+                                <select class="form-select" id="brand_select" name="brand_select">
+                                    <option value="">-- ไม่ระบุ --</option>
+                                    <?php 
+                                    $brand_result->data_seek(0);
+                                    while($b = $brand_result->fetch_assoc()): 
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($b['brand']); ?>"><?php echo htmlspecialchars($b['brand']); ?></option>
+                                    <?php endwhile; ?>
+                                    <option value="other" class="fw-bold text-primary">+ อื่นๆ (ระบุยี่ห้อใหม่)</option>
+                                </select>
+                                
+                                <div class="input-group" id="brand_other_group" style="display: none;">
+                                    <input type="text" class="form-control border-primary" id="brand_other" name="brand_other" placeholder="พิมพ์ยี่ห้อใหม่...">
+                                    <button class="btn btn-outline-danger" type="button" id="btn_cancel_brand" title="ยกเลิก"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="model" class="form-label">รุ่น (Model)</label>
+                                <input type="text" class="form-control" id="model" name="model">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="serial_number" class="form-label">หมายเลขซีเรียล (S/N)</label>
+                                <input type="text" class="form-control" id="serial_number" name="serial_number">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category_id" class="form-label">หมวดหมู่</label>
+                                <select class="form-select" id="category_id" name="category_id">
+                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                    <?php while($row = $cat_result->fetch_assoc()): ?>
+                                        <option value="<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['category_name']); ?></option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="entry_date" class="form-label">วันที่รับเข้า <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="entry_date" name="entry_date" required>
+                            </div>
+                        </div>
+
+                        <h5 class="border-bottom pb-2 mt-4 mb-4 text-primary">ข้อมูลการจัดการ</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="campus" class="form-label">วิทยาเขต <span class="text-danger">*</span></label>
+                                <select class="form-select" id="campus" name="campus" required>
+                                    <option value="ประสานมิตร">ประสานมิตร</option>
+                                    <option value="องครักษ์">องครักษ์</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="location_id" class="form-label">สถานที่จัดเก็บ</label>
+                                <select class="form-select" id="location_id" name="location_id">
+                                    <option value="">-- เลือกสถานที่ --</option>
+                                    <?php while($row = $loc_result->fetch_assoc()): ?>
+                                        <option value="<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['location_name']); ?></option>
+                                    <?php endwhile; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="responsible_person" class="form-label">ผู้ครอบครอง/รับผิดชอบ</label>
+                                <input type="text" class="form-control" id="responsible_person" name="responsible_person">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">สถานะ <span class="text-danger">*</span></label>
+                                <select class="form-select" id="status" name="status" onchange="toggleStatusDate(this.value)" required>
+                                    <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
+                                    <option value="ชำรุด">ชำรุด</option>
+                                    <option value="กำลังซ่อม">กำลังซ่อม</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3" id="status_date_div" style="display: none;">
+                                <label for="status_updated_at" class="form-label text-danger">วันที่แจ้งชำรุด/ส่งซ่อม <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control border-danger" id="status_updated_at" name="status_updated_at">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="remark" class="form-label">หมายเหตุ</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3"></textarea>
+                        </div>
+
+                        <hr>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary btn-lg px-5"><i class="fas fa-save me-2"></i> บันทึกข้อมูล</button>
+                        </div>
+                    </form>
                 </div>
-                
-                <div class="card shadow-sm border-0 mb-5">
-                    <div class="card-body p-4">
-                        <form action="equipment_add.php" method="POST">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">รหัสครุภัณฑ์ <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="equipment_code" placeholder="เช่น สห.67-009" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">หมายเลขซีเรียล (S/N)</label>
-                                    <input type="text" class="form-control" name="serial_number" placeholder="เช่น SN-A1001">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">ชื่อครุภัณฑ์ <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="equipment_name" placeholder="เช่น โทรทัศน์แอลอีดี (LED TV)" required>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">แบรนด์/ยี่ห้อ</label>
-                                    <input type="text" class="form-control" name="brand" placeholder="เช่น Samsung">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">รุ่นสินค้า</label>
-                                    <input type="text" class="form-control" name="model" placeholder="เช่น UA55AU7700">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="category_id" required>
-                                        <option value="" disabled selected>-- เลือกหมวดหมู่ --</option>
-                                        <?php while($cat = $result_categories->fetch_assoc()): ?>
-                                            <option value="<?php echo $cat['id']; ?>"><?php echo $cat['category_name']; ?></option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">สถานที่จัดเก็บ <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="location_id" required>
-                                        <option value="" disabled selected>-- เลือกสถานที่จัดเก็บ --</option>
-                                        <?php while($loc = $result_locations->fetch_assoc()): ?>
-                                            <option value="<?php echo $loc['id']; ?>"><?php echo $loc['location_name']; ?></option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">วิทยาเขต <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="campus" required>
-                                        <option value="" disabled selected>-- เลือกวิทยาเขต --</option>
-                                        <option value="ประสานมิตร">มศว ประสานมิตร</option>
-                                        <option value="องครักษ์">มศว องครักษ์</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">สถานะ <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="status" id="statusSelect" required>
-                                        <option value="พร้อมใช้งาน" selected>พร้อมใช้งาน</option>
-                                        <option value="ชำรุด">ชำรุด</option>
-                                        <option value="กำลังซ่อม">กำลังซ่อม</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label">วันที่รับเข้า <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" name="entry_date" value="<?php echo date('Y-m-d'); ?>" required>
-                                </div>
-                                <div class="col-md-6" id="dateGroup" style="display: none;">
-                                    <label class="form-label text-danger fw-bold">วันที่แจ้งชำรุด/ส่งซ่อม <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control border-danger" name="status_updated_at" id="dateInput">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">หมายเหตุ (กรณีกำลังซ่อมหรือชำรุด)</label>
-                                <textarea class="form-control" name="remark" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
-                            </div>
-
-                            <hr>
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="equipments.php" class="btn btn-secondary px-4">ยกเลิก</a>
-                                <button type="submit" class="btn btn-success px-4"> บันทึกข้อมูล</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// สคริปต์ซ่อน/แสดงช่องวันที่
-document.addEventListener('DOMContentLoaded', function() {
-    const statusSelect = document.getElementById('statusSelect');
-    const dateGroup = document.getElementById('dateGroup');
-    const dateInput = document.getElementById('dateInput');
-
-    function toggleDateField() {
-        if (statusSelect.value === 'ชำรุด' || statusSelect.value === 'กำลังซ่อม') {
-            dateGroup.style.display = 'block';
-            dateInput.required = true;
-            if (!dateInput.value) {
-                dateInput.value = new Date().toISOString().split('T')[0]; // ใส่วันที่ปัจจุบันอัตโนมัติ
-            }
-        } else {
-            dateGroup.style.display = 'none';
-            dateInput.required = false;
-            dateInput.value = '';
-        }
+function toggleStatusDate(status) {
+    const dateDiv = document.getElementById('status_date_div');
+    const dateInput = document.getElementById('status_updated_at');
+    if (status === 'ชำรุด' || status === 'กำลังซ่อม') {
+        dateDiv.style.display = 'block';
+        dateInput.required = true;
+    } else {
+        dateDiv.style.display = 'none';
+        dateInput.required = false;
+        dateInput.value = '';
     }
-    statusSelect.addEventListener('change', toggleDateField);
-    toggleDateField(); 
+}
+
+// 🌟 JS จัดการสลับหน้าตายี่ห้อให้ดูสวยและอยู่ในบรรทัดเดิม
+const brandSelect = document.getElementById('brand_select');
+const brandOtherGroup = document.getElementById('brand_other_group');
+const brandOtherInput = document.getElementById('brand_other');
+const btnCancelBrand = document.getElementById('btn_cancel_brand');
+
+brandSelect.addEventListener('change', function() {
+    if (this.value === 'other') {
+        this.style.display = 'none';           // ซ่อน Dropdown
+        brandOtherGroup.style.display = 'flex'; // โชว์ช่องพิมพ์ + ปุ่ม X
+        brandOtherInput.required = true;
+        brandOtherInput.focus();
+    }
+});
+
+btnCancelBrand.addEventListener('click', function() {
+    brandOtherGroup.style.display = 'none'; // ซ่อนช่องพิมพ์
+    brandOtherInput.required = false;
+    brandOtherInput.value = '';
+    brandSelect.style.display = 'block';    // โชว์ Dropdown กลับมา
+    brandSelect.value = '';                 // รีเซ็ตค่าเป็นหน้าแรก
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
