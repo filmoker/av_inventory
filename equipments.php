@@ -179,7 +179,7 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                         if ($diff->m > 0) {
                                             $age_text .= $diff->m . " เดือน";
                                         }
-                                        // ถ้าอายุยังไม่ถึงเดือน ให้แสดงเป็นวัน
+
                                         if ($diff->y == 0 && $diff->m == 0) {
                                             $age_text = $diff->d . " วัน"; 
                                         }
