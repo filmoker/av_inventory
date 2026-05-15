@@ -53,7 +53,7 @@ $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-warning py-3">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-edit me-2"></i> แก้ไขข้อมูลหลายรายการ (จำนวน <?php echo $count; ?> รายการ)</h5>
+                    <h5 class="mb-0 fw-bold">แก้ไขข้อมูลหลายรายการ (จำนวน <?php echo $count; ?> รายการ)</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="alert alert-info mb-4">
