@@ -7,35 +7,57 @@ require_once 'db_connect.php';
 $current_page = basename($_SERVER['PHP_SELF']); 
 $is_equipment_menu = ($current_page == 'equipments.php' || $current_page == 'equipment_add.php');
 
-// 2. รับค่าสถานที่จาก URL (ถ้าไม่มีให้ว่างไว้ แปลว่าดูทั้งหมด)
+// 2. รับค่าจาก URL (ทั้งสถานที่และหน่วยงาน)
 $current_loc = isset($_GET['location']) ? $_GET['location'] : '';
+$current_unit = isset($_GET['unit_id']) ? $_GET['unit_id'] : '';
 
-// 3. สร้างเงื่อนไข SQL สำหรับกรองข้อมูลตามสถานที่
-$where_location = "";
+$where_filter = "";
 if ($current_loc != "") {
-    $current_loc_esc = $conn->real_escape_string($current_loc);
-    $where_location = " AND e.campus = '$current_loc_esc'"; 
+    $where_filter .= " AND e.campus = '" . $conn->real_escape_string($current_loc) . "'"; 
+}
+if ($current_unit != "") {
+    $where_filter .= " AND e.unit_id = '" . $conn->real_escape_string($current_unit) . "'"; 
 }
 
-// 4. คำสั่ง SQL สำหรับนับจำนวนครุภัณฑ์
-$sql_total = "SELECT COUNT(*) as count FROM equipments e WHERE 1=1 $where_location";
-$sql_ready = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'พร้อมใช้งาน' $where_location";
-$sql_repair = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'กำลังซ่อม' $where_location";
-$sql_broken = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'ชำรุด' $where_location";
+$sql_total = "SELECT COUNT(*) as count FROM equipments e WHERE 1=1 $where_filter";
+$sql_ready = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'พร้อมใช้งาน' $where_filter";
+$sql_repair = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'กำลังซ่อม' $where_filter";
+$sql_broken = "SELECT COUNT(*) as count FROM equipments e WHERE e.status = 'ชำรุด' $where_filter";
 
 // 5. ดึงข้อมูลครุภัณฑ์ที่ชำรุดหรือกำลังซ่อม 
 $sql_alerts = "SELECT e.equipment_code, e.equipment_name, e.brand, e.model, e.status, e.status_updated_at, l.location_name 
                FROM equipments e
                LEFT JOIN locations l ON e.location_id = l.id
-               WHERE e.status IN ('ชำรุด', 'กำลังซ่อม') $where_location 
+               WHERE e.status IN ('ชำรุด', 'กำลังซ่อม') $where_filter 
                ORDER BY e.id";
 $result_alerts = $conn->query($sql_alerts);
 
-// ดึงข้อมูลออกมาเก็บในตัวแปร
 $total = $conn->query($sql_total)->fetch_assoc()['count'];
 $ready = $conn->query($sql_ready)->fetch_assoc()['count'];
 $repair = $conn->query($sql_repair)->fetch_assoc()['count'];
 $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
+
+$units = [];
+$units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
+if ($units_result && $units_result->num_rows > 0) {
+    while($row = $units_result->fetch_assoc()) {
+        $units[] = $row;
+    }
+} else {
+    $units = [
+        ['id' => 1, 'unit_name' => 'หน่วยโครงสร้างพื้นฐานเทคโนโลยีสารสนเทศดิจิทัล'],
+        ['id' => 2, 'unit_name' => 'หน่วยบริการสื่อและมัลติมีเดีย']
+    ];
+}
+
+$base_qs = "";
+if($current_loc != '') $base_qs .= "location=" . urlencode($current_loc) . "&";
+if($current_unit != '') $base_qs .= "unit_id=" . urlencode($current_unit) . "&";
+
+$total_link = "equipments.php" . ($base_qs ? "?" . rtrim($base_qs, "&") : "");
+$ready_link = "equipments.php?filter=" . urlencode("พร้อมใช้งาน") . ($base_qs ? "&" . rtrim($base_qs, "&") : "");
+$repair_link = "equipments.php?filter=" . urlencode("กำลังซ่อม") . ($base_qs ? "&" . rtrim($base_qs, "&") : "");
+$broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_qs ? "&" . rtrim($base_qs, "&") : "");
 ?>
 
 <!DOCTYPE html>
@@ -51,7 +73,6 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
         
-        /* 🌟 ปรับ Sidebar ให้กว้าง 220px ตายตัว */
         .sidebar { background-color: #1e2b3c; min-height: 100vh; color: #fff; width: 220px; }
         .sidebar a { color: #c2c7d0; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #2b3c53; }
         .sidebar a:hover, .sidebar a.active { background-color: #2b3c53; color: #fff; }
@@ -73,19 +94,49 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                </a>
             </div>
             <nav class="mt-3">
                 <a href="index.php" class="<?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
                     <i class="fas fa-home me-2"></i> หน้าแรก
                 </a>
+                
                 <a href="#equipmentMenu" data-bs-toggle="collapse" class="<?php echo $is_equipment_menu ? 'text-white' : ''; ?>">
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
                 <div class="collapse <?php echo $is_equipment_menu ? 'show' : ''; ?>" id="equipmentMenu" style="background-color: #16202c;">
-                    <a href="equipments.php?location=ประสานมิตร" style="padding-left: 45px; font-size: 0.9em;"> ประสานมิตร</a>
-                    <a href="equipments.php?location=องครักษ์" style="padding-left: 45px; font-size: 0.9em;"> องครักษ์</a>
+                    
+                    <a href="#menuPsm" data-bs-toggle="collapse" class="text-white-50 hover-white d-block" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        ประสานมิตร <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuPsm" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=ประสานมิตร" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด 
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=ประสานมิตร&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <a href="#menuOkr" data-bs-toggle="collapse" class="text-white-50 hover-white d-block mt-1" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        องครักษ์ <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuOkr" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=องครักษ์" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด 
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=องครักษ์&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
                 </div>
+                
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
@@ -100,17 +151,30 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
             </div>
 
             <div class="mb-4">
-                <div class="btn-group shadow-sm">
-                    <a href="index.php" class="btn <?php echo ($current_loc == '') ? 'btn-primary' : 'btn-outline-primary bg-white'; ?>">ภาพรวมทั้งหมด</a>
-                    <a href="index.php?location=ประสานมิตร" class="btn <?php echo ($current_loc == 'ประสานมิตร') ? 'btn-primary' : 'btn-outline-primary bg-white'; ?>">ประสานมิตร</a>
-                    <a href="index.php?location=องครักษ์" class="btn <?php echo ($current_loc == 'องครักษ์') ? 'btn-primary' : 'btn-outline-primary bg-white'; ?>">องครักษ์</a>
+                <div class="d-flex flex-wrap gap-3 align-items-center bg-white p-3 rounded shadow-sm border border-light">
+                    
+                    <a href="index.php" class="btn <?php echo ($current_loc == '' && $current_unit == '') ? 'btn-primary' : 'btn-outline-primary'; ?> fw-bold px-4"> ภาพรวมทั้งหมด
+                    </a>
+                    
+                    <div class="vr mx-1 d-none d-md-block"></div> <div class="btn-group">
+                        <a href="index.php?location=ประสานมิตร" class="btn <?php echo ($current_loc == 'ประสานมิตร') ? 'btn-primary' : 'btn-outline-primary'; ?>">ประสานมิตร</a>
+                        <a href="index.php?location=องครักษ์" class="btn <?php echo ($current_loc == 'องครักษ์') ? 'btn-primary' : 'btn-outline-primary'; ?>">องครักษ์</a>
+                    </div>
+
+                    <div class="vr mx-1 d-none d-md-block"></div> <div class="btn-group flex-wrap">
+                        <?php foreach($units as $u): ?>
+                            <a href="index.php?unit_id=<?php echo $u['id']; ?>" class="btn <?php echo ($current_unit == $u['id']) ? 'btn-info text-white' : 'btn-outline-info'; ?> fw-semibold">
+                                <?php echo htmlspecialchars($u['unit_name']); ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+
                 </div>
             </div>
 
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <div class="card card-stat bg-primary-dark p-3 shadow-sm" 
-                         onclick="window.location='equipments.php<?php echo ($current_loc != '') ? '?location='.$current_loc : ''; ?>'">
+                    <div class="card card-stat bg-primary-dark p-3 shadow-sm" onclick="window.location='<?php echo $total_link; ?>'">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="mb-0"><?php echo $total; ?></h3>
@@ -122,8 +186,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card card-stat bg-success-dark p-3 shadow-sm" 
-                        onclick="window.location='equipments.php?filter=พร้อมใช้งาน<?php echo ($current_loc != '') ? '&location='.$current_loc : ''; ?>'">
+                    <div class="card card-stat bg-success-dark p-3 shadow-sm" onclick="window.location='<?php echo $ready_link; ?>'">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="mb-0"><?php echo $ready; ?></h3>
@@ -135,8 +198,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card card-stat bg-warning-dark p-3 shadow-sm" 
-                        onclick="window.location='equipments.php?filter=กำลังซ่อม<?php echo ($current_loc != '') ? '&location='.$current_loc : ''; ?>'">
+                    <div class="card card-stat bg-warning-dark p-3 shadow-sm" onclick="window.location='<?php echo $repair_link; ?>'">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="mb-0"><?php echo $repair; ?></h3>
@@ -148,8 +210,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                 </div>
 
                 <div class="col-md-3">
-                    <div class="card card-stat bg-danger-dark p-3 shadow-sm" 
-                        onclick="window.location='equipments.php?filter=ชำรุด<?php echo ($current_loc != '') ? '&location='.$current_loc : ''; ?>'">
+                    <div class="card card-stat bg-danger-dark p-3 shadow-sm" onclick="window.location='<?php echo $broken_link; ?>'">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="mb-0"><?php echo $broken; ?></h3>
@@ -185,7 +246,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                                                     <div><?php echo $row['equipment_name']; ?></div>
                                                     <small class="text-muted"><?php echo ($row['brand'] ?: '-') . " / " . ($row['model'] ?: '-'); ?></small>
                                                 </td>
-                                                <td><small class="text-secondary fw-semibold"><?php echo $row['location_name'] ?: '-'; ?></small></td>
+                                                <td><small class="text-secondary fw-semibold"><i class="fas fa-map-marker-alt me-1"></i><?php echo $row['location_name'] ?: '-'; ?></small></td>
                                                 <td class="text-center">
                                                     <span class="badge <?php echo ($row['status'] == 'ชำรุด') ? 'bg-danger' : 'bg-warning text-dark'; ?>">
                                                         <?php echo $row['status']; ?>
@@ -223,7 +284,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                         <div class="card-header bg-white"><h5>รายการเข้าถึงด่วน</h5></div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="equipment_add.php" class="btn btn-primary text-start p-3"><i class="fas fa-plus-circle me-2"></i> ขึ้นทะเบียนใหม่</a>
+                                <a href="equipment_add.php" class="btn btn-primary text-start p-3 fw-bold"><i class="fas fa-plus-circle me-2"></i> ขึ้นทะเบียนใหม่</a>
                             </div>
                         </div>
                     </div>
