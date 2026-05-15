@@ -9,9 +9,11 @@ $count = count($ids_array);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_update'])) {
     $updates = [];
+    
+    // 🌟 เพิ่ม unit_id เข้าไปใน array fields 
     $fields = [
         'equipment_name', 'brand', 'model', 'category_id', 
-        'location_id', 'campus', 'responsible_person', 'entry_date'
+        'location_id', 'unit_id', 'campus', 'responsible_person', 'entry_date'
     ];
 
     foreach ($fields as $field) {
@@ -36,6 +38,9 @@ $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name
 // ดึงข้อมูลยี่ห้อ (Brand) ทั้งหมดที่มีในระบบ และเรียง A-Z
 $brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
 $brand_result = $conn->query($brand_query);
+
+// 🌟 ดึงข้อมูลหน่วยงานเพื่อมาแสดงใน Dropdown
+$result_units = @$conn->query("SELECT * FROM units ORDER BY id ASC");
 ?>
 
 <!DOCTYPE html>
@@ -111,6 +116,7 @@ $brand_result = $conn->query($brand_query);
                                     <?php endwhile; ?>
                                 </select>
                             </div>
+                            
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">วิทยาเขต</label>
                                 <select name="campus" class="form-select">
@@ -119,11 +125,28 @@ $brand_result = $conn->query($brand_query);
                                     <option value="องครักษ์">มศว องครักษ์</option>
                                 </select>
                             </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">หน่วยงาน</label>
+                                <select name="unit_id" class="form-select">
+                                    <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                                    <?php 
+                                    if($result_units) {
+                                        while($u = $result_units->fetch_assoc()): 
+                                    ?>
+                                        <option value="<?php echo $u['id']; ?>"><?php echo htmlspecialchars($u['unit_name']); ?></option>
+                                    <?php 
+                                        endwhile; 
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">ผู้ครอบครอง</label>
                                 <input type="text" name="responsible_person" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold">วันที่รับเข้า</label>
                                 <input type="date" name="entry_date" class="form-control">
                             </div>
