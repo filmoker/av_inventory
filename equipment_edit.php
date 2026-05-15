@@ -184,7 +184,6 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
         <div class="col-md-10 p-4 bg-light flex-grow-1" style="min-width: 0;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4>แก้ไขข้อมูลครุภัณฑ์</h4>
-                <a href="equipments.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> กลับหน้ารายการ</a>
             </div>
 
             <?php if(isset($error)): ?><div class="alert alert-danger"><?php echo $error; ?></div><?php endif; ?>
@@ -324,6 +323,7 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
 
                         <hr>
                         <div class="text-end">
+                            <a href="equipments.php" class="btn btn-secondary btn-lg px-5">ยกเลิก</a>
                             <button type="submit" class="btn btn-warning btn-lg px-5 fw-bold text-dark"> บันทึกการเปลี่ยนแปลง</button>
                         </div>
                     </form>
