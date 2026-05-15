@@ -8,46 +8,34 @@ if (!isset($_GET['id']) && !isset($_POST['id'])) {
 
 $cat_result = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
 $loc_result = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
-
-// ดึงข้อมูลยี่ห้อ (Brand)
 $brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
 $brand_result = $conn->query($brand_query);
 
-// 🌟 ดึงข้อมูลหน่วยงาน (สำหรับ Dropdown ในฟอร์ม และ Sidebar)
 $units = [];
 $units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
 if ($units_result && $units_result->num_rows > 0) {
-    while($row = $units_result->fetch_assoc()) {
-        $units[] = $row;
-    }
-} else {
-    $units = [
-        ['id' => 1, 'unit_name' => 'หน่วยโครงสร้างพื้นฐานเทคโนโลยีสารสนเทศดิจิทัล'],
-        ['id' => 2, 'unit_name' => 'หน่วยบริการสื่อและมัลติมีเดีย']
-    ];
+    while($row = $units_result->fetch_assoc()) { $units[] = $row; }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id = $_POST['id'];
+    
+    // ดึงข้อมูลเดิมมาเก็บไว้ก่อน (เพื่อเช็ครูปภาพเก่า)
+    $old_eq = $conn->query("SELECT image FROM equipments WHERE id = $id")->fetch_assoc();
     
     $equipment_code_num = trim($_POST['equipment_code_number']);
     $equipment_code = $conn->real_escape_string('สห.' . $equipment_code_num);
     $equipment_name = $conn->real_escape_string(trim($_POST['equipment_name']));
     
     $brand_val = $_POST['brand_select'];
-    if ($brand_val === 'other') {
-        $brand_val = trim($_POST['brand_other']); 
-    }
+    if ($brand_val === 'other') { $brand_val = trim($_POST['brand_other']); }
     $brand = $conn->real_escape_string($brand_val);
     
     $model = $conn->real_escape_string(trim($_POST['model']));
     $serial_number = $conn->real_escape_string(trim($_POST['serial_number']));
     $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : "NULL";
     $location_id = !empty($_POST['location_id']) ? $_POST['location_id'] : "NULL";
-    
-    // 🌟 รับค่าหน่วยงาน
     $unit_id = !empty($_POST['unit_id']) ? $_POST['unit_id'] : "NULL";
-
     $campus = $conn->real_escape_string($_POST['campus']);
     $responsible_person = $conn->real_escape_string(trim($_POST['responsible_person']));
     $status = $conn->real_escape_string($_POST['status']);
@@ -61,11 +49,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $entry_date = !empty($_POST['entry_date']) ? "'".$conn->real_escape_string($_POST['entry_date'])."'" : "NULL";
     $remark = $conn->real_escape_string(trim($_POST['remark']));
 
+    //  ระบบจัดการอัปโหลดรูปภาพ 
+    $image_update_sql = "";
+    if (isset($_FILES['equipment_image']) && $_FILES['equipment_image']['error'] == 0) {
+        $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $ext = strtolower(pathinfo($_FILES['equipment_image']['name'], PATHINFO_EXTENSION));
+        
+        if (in_array($ext, $allowed_types)) {
+            $new_filename = uniqid('eq_') . '.' . $ext;
+            $upload_path = 'uploads/' . $new_filename;
+            
+            if (move_uploaded_file($_FILES['equipment_image']['tmp_name'], $upload_path)) {
+                $image_update_sql = ", image = '" . $conn->real_escape_string($new_filename) . "'";
+                
+                // ลบรูปภาพเก่าทิ้งเพื่อประหยัดพื้นที่ (ถ้ามี)
+                if (!empty($old_eq['image']) && file_exists('uploads/' . $old_eq['image'])) {
+                    unlink('uploads/' . $old_eq['image']);
+                }
+            }
+        }
+    }
+
     $check_sql = "SELECT id FROM equipments WHERE equipment_code = '$equipment_code' AND id != $id";
     if ($conn->query($check_sql)->num_rows > 0) {
         $error = "รหัสครุภัณฑ์นี้มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น";
     } else {
-        // 🌟 อัปเดตข้อมูล unit_id ด้วย
         $sql = "UPDATE equipments SET 
                     equipment_code = '$equipment_code',
                     equipment_name = '$equipment_name',
@@ -80,7 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     status = '$status',
                     status_updated_at = $status_updated_at,
                     entry_date = $entry_date,
-                    remark = '$remark',
+                    remark = '$remark'
+                    $image_update_sql,
                     updated_at = NOW()
                 WHERE id = $id";
 
@@ -96,10 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $id = isset($_GET['id']) ? $_GET['id'] : $_POST['id'];
 $sql = "SELECT * FROM equipments WHERE id = $id";
 $result = $conn->query($sql);
-if ($result->num_rows == 0) {
-    header("Location: equipments.php");
-    exit();
-}
+if ($result->num_rows == 0) { header("Location: equipments.php"); exit(); }
 $eq = $result->fetch_assoc();
 
 $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
@@ -109,7 +115,6 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แก้ไขครุภัณฑ์ - ระบบบริหารครุภัณฑ์</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -119,7 +124,6 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
         .sidebar { background-color: #1e2b3c; min-height: 100vh; color: #fff; width: 220px; }
         .sidebar a { color: #c2c7d0; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #2b3c53; }
         .sidebar a:hover, .sidebar a.active { background-color: #2b3c53; color: #fff; }
-        .hover-white:hover { color: #ffffff !important; }
     </style>
 </head>
 <body>
@@ -135,7 +139,7 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
                 
-                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white fw-bold active">
+                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white fw-bold active" aria-expanded="true">
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
                 
@@ -168,9 +172,10 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                         <?php endforeach; ?>
                     </div>
                 </div>
-                
+
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="units.php"><i class="fas fa-layer-group me-2"></i> จัดการหน่วยงาน</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
                 <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
@@ -178,20 +183,18 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
 
         <div class="col-md-10 p-4 bg-light flex-grow-1" style="min-width: 0;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4><i class="fas fa-edit text-warning me-2"></i> แก้ไขข้อมูลครุภัณฑ์</h4>
+                <h4>แก้ไขข้อมูลครุภัณฑ์</h4>
                 <a href="equipments.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> กลับหน้ารายการ</a>
             </div>
 
-            <?php if(isset($error)): ?>
-                <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> <?php echo $error; ?></div>
-            <?php endif; ?>
+            <?php if(isset($error)): ?><div class="alert alert-danger"><?php echo $error; ?></div><?php endif; ?>
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
-                    <form action="equipment_edit.php" method="POST">
+                    <form action="equipment_edit.php" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="id" value="<?php echo $eq['id']; ?>">
                         
-                        <h5 class="border-bottom pb-2 mb-4 text-warning">ข้อมูลพื้นฐาน</h5>
+                        <h5 class="border-bottom pb-2 mb-4 text-warning">ข้อมูลพื้นฐานและรูปภาพ</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="equipment_code_number" class="form-label">รหัสครุภัณฑ์ <span class="text-danger">*</span></label>
@@ -215,32 +218,21 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                                     $brand_found = false;
                                     $brand_result->data_seek(0);
                                     while($b = $brand_result->fetch_assoc()): 
-                                        $selected = '';
-                                        if ($eq['brand'] == $b['brand']) {
-                                            $selected = 'selected';
-                                            $brand_found = true;
-                                        }
+                                        $selected = ($eq['brand'] == $b['brand']) ? 'selected' : '';
+                                        if($selected) $brand_found = true;
                                     ?>
-                                        <option value="<?php echo htmlspecialchars($b['brand']); ?>" <?php echo $selected; ?>>
-                                            <?php echo htmlspecialchars($b['brand']); ?>
-                                        </option>
+                                        <option value="<?php echo htmlspecialchars($b['brand']); ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($b['brand']); ?></option>
                                     <?php endwhile; ?>
-                                    
                                     <?php if(!empty($eq['brand']) && !$brand_found): ?>
-                                        <option value="<?php echo htmlspecialchars($eq['brand']); ?>" selected>
-                                            <?php echo htmlspecialchars($eq['brand']); ?>
-                                        </option>
+                                        <option value="<?php echo htmlspecialchars($eq['brand']); ?>" selected><?php echo htmlspecialchars($eq['brand']); ?></option>
                                     <?php endif; ?>
-                                    
                                     <option value="other" class="fw-bold text-primary">+ อื่นๆ (ระบุยี่ห้อใหม่)</option>
                                 </select>
-                                
                                 <div class="input-group" id="brand_other_group" style="display: none;">
                                     <input type="text" class="form-control border-primary" id="brand_other" name="brand_other" placeholder="พิมพ์ยี่ห้อใหม่...">
                                     <button class="btn btn-outline-danger" type="button" id="btn_cancel_brand" title="ยกเลิก"><i class="fas fa-times"></i></button>
                                 </div>
                             </div>
-
                             <div class="col-md-4 mb-3">
                                 <label for="model" class="form-label">รุ่น (Model)</label>
                                 <input type="text" class="form-control" id="model" name="model" value="<?php echo htmlspecialchars($eq['model']); ?>">
@@ -252,25 +244,32 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="category_id" class="form-label">หมวดหมู่ <span class="text-danger">*</span></label>
                                 <select class="form-select" id="category_id" name="category_id" required>
                                     <option value="">-- เลือกหมวดหมู่ --</option>
                                     <?php while($row = $cat_result->fetch_assoc()): ?>
-                                        <option value="<?php echo $row['id']; ?>" <?php echo ($eq['category_id'] == $row['id']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($row['category_name']); ?>
-                                        </option>
+                                        <option value="<?php echo $row['id']; ?>" <?php echo ($eq['category_id'] == $row['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($row['category_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="entry_date" class="form-label">วันที่รับเข้า <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="entry_date" name="entry_date" value="<?php echo $eq['entry_date'] ? date('Y-m-d', strtotime($eq['entry_date'])) : ''; ?>" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="equipment_image" class="form-label">เปลี่ยนรูปภาพ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <?php if(!empty($eq['image'])): ?>
+                                        <img src="uploads/<?php echo $eq['image']; ?>" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" title="รูปเดิม">
+                                    <?php endif; ?>
+                                    <input class="form-control" type="file" id="equipment_image" name="equipment_image" accept="image/*">
+                                </div>
                             </div>
                         </div>
 
                         <h5 class="border-bottom pb-2 mt-4 mb-4 text-warning">ข้อมูลการจัดการ</h5>
-                        
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label for="campus" class="form-label">วิทยาเขต <span class="text-danger">*</span></label>
@@ -279,27 +278,21 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                                     <option value="องครักษ์" <?php echo ($eq['campus'] == 'องครักษ์') ? 'selected' : ''; ?>>องครักษ์</option>
                                 </select>
                             </div>
-                            
                             <div class="col-md-3 mb-3">
                                 <label for="unit_id" class="form-label">หน่วยงาน <span class="text-danger">*</span></label>
                                 <select class="form-select" id="unit_id" name="unit_id" required>
                                     <option value="">-- เลือกหน่วยงาน --</option>
                                     <?php foreach($units as $u): ?>
-                                        <option value="<?php echo $u['id']; ?>" <?php echo (isset($eq['unit_id']) && $eq['unit_id'] == $u['id']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($u['unit_name']); ?>
-                                        </option>
+                                        <option value="<?php echo $u['id']; ?>" <?php echo (isset($eq['unit_id']) && $eq['unit_id'] == $u['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($u['unit_name']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-
                             <div class="col-md-3 mb-3">
                                 <label for="location_id" class="form-label">สถานที่จัดเก็บ</label>
                                 <select class="form-select" id="location_id" name="location_id">
                                     <option value="">-- เลือกสถานที่ --</option>
                                     <?php while($row = $loc_result->fetch_assoc()): ?>
-                                        <option value="<?php echo $row['id']; ?>" <?php echo ($eq['location_id'] == $row['id']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($row['location_name']); ?>
-                                        </option>
+                                        <option value="<?php echo $row['id']; ?>" <?php echo ($eq['location_id'] == $row['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($row['location_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
@@ -331,7 +324,7 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
 
                         <hr>
                         <div class="text-end">
-                            <button type="submit" class="btn btn-warning btn-lg px-5 fw-bold text-dark"><i class="fas fa-save me-2"></i> บันทึกการเปลี่ยนแปลง</button>
+                            <button type="submit" class="btn btn-warning btn-lg px-5 fw-bold text-dark"> บันทึกการเปลี่ยนแปลง</button>
                         </div>
                     </form>
                 </div>
@@ -347,15 +340,11 @@ function toggleStatusDate(status) {
     const dateDiv = document.getElementById('status_date_div');
     const dateInput = document.getElementById('status_updated_at');
     if (status === 'ชำรุด' || status === 'กำลังซ่อม') {
-        dateDiv.style.display = 'block';
-        dateInput.required = true;
+        dateDiv.style.display = 'block'; dateInput.required = true;
     } else {
-        dateDiv.style.display = 'none';
-        dateInput.required = false;
-        dateInput.value = '';
+        dateDiv.style.display = 'none'; dateInput.required = false; dateInput.value = '';
     }
 }
-
 const brandSelect = document.getElementById('brand_select');
 const brandOtherGroup = document.getElementById('brand_other_group');
 const brandOtherInput = document.getElementById('brand_other');
@@ -363,22 +352,13 @@ const btnCancelBrand = document.getElementById('btn_cancel_brand');
 
 brandSelect.addEventListener('change', function() {
     if (this.value === 'other') {
-        this.style.display = 'none';
-        brandOtherGroup.style.display = 'flex';
-        brandOtherInput.required = true;
-        brandOtherInput.focus();
+        this.style.display = 'none'; brandOtherGroup.style.display = 'flex'; brandOtherInput.required = true; brandOtherInput.focus();
     }
 });
-
 btnCancelBrand.addEventListener('click', function() {
-    brandOtherGroup.style.display = 'none';
-    brandOtherInput.required = false;
-    brandOtherInput.value = '';
+    brandOtherGroup.style.display = 'none'; brandOtherInput.required = false; brandOtherInput.value = '';
     brandSelect.style.display = 'block';
-    
-    if(brandSelect.options.length > 0) {
-        brandSelect.selectedIndex = 0; 
-    }
+    if(brandSelect.options.length > 0) { brandSelect.selectedIndex = 0; }
 });
 </script>
 </body>
