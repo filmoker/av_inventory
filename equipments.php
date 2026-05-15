@@ -40,7 +40,7 @@ if ($search_param != '') {
 
 $where_sql = count($where_clauses) > 0 ? " WHERE " . implode(" AND ", $where_clauses) : "";
 
-// 4. ดึงข้อมูลครุภัณฑ์จากฐานข้อมูล (🌟 เพิ่ม LEFT JOIN units)
+// 4. ดึงข้อมูลครุภัณฑ์จากฐานข้อมูล 
 $sql = "SELECT e.*, c.category_name, l.location_name, u.unit_name 
         FROM equipments e
         LEFT JOIN categories c ON e.category_id = c.id
@@ -146,11 +146,10 @@ if ($units_result && $units_result->num_rows > 0) {
                         </a>
                         <?php endforeach; ?>
                     </div>
-
                 </div>
-                
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="units.php"><i class="fas fa-layer-group me-2"></i> จัดการหน่วยงาน</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
                 <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
@@ -233,7 +232,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                     <th>ชื่อครุภัณฑ์</th>
                                     <th>ยี่ห้อ/รุ่น</th>
                                     <th>วันที่รับ</th>
-                                    <th>อายุการใช้งาน</th>
+                                    <th>อายุ</th>
                                     <th>วิทยาเขต</th>
                                     <th>หน่วยงาน</th>
                                     <th>สถานที่จัดเก็บ</th>
@@ -339,9 +338,12 @@ if ($units_result && $units_result->num_rows > 0) {
                                     
                                     <td class="text-center text-nowrap">
                                         <div class="d-flex justify-content-center gap-1">
-                                            <a href="equipment_edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
-                                            <a href="equipment_delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบข้อมูล?')"><i class="fas fa-trash"></i></a>
-                                        </div>
+                                        <a href="equipment_view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-info" title="ดูรายละเอียด">
+                                            <i class="fas fa-list-ul"></i>
+                                        </a>
+                                        <a href="equipment_edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                                        <a href="equipment_delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบข้อมูล?')"><i class="fas fa-trash"></i></a>
+                                    </div>
                                     </td>
                                 </tr>
                                 <?php endwhile; endif; ?>
