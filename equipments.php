@@ -92,8 +92,8 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
                 <div class="collapse show" id="equipmentMenu" style="background-color: #16202c;">
-                    <a href="equipments.php?location=ประสานมิตร" class="<?php echo ($loc_param == 'ประสานมิตร') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;">มศว ประสานมิตร</a>
-                    <a href="equipments.php?location=องครักษ์" class="<?php echo ($loc_param == 'องครักษ์') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;">มศว องครักษ์</a>
+                    <a href="equipments.php?location=ประสานมิตร" class="<?php echo ($loc_param == 'ประสานมิตร') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;"> ประสานมิตร</a>
+                    <a href="equipments.php?location=องครักษ์" class="<?php echo ($loc_param == 'องครักษ์') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;"> องครักษ์</a>
                 </div>
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
