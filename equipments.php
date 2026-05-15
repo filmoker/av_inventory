@@ -7,6 +7,7 @@ $loc_param = isset($_GET['location']) ? $_GET['location'] : '';
 $filter_param = isset($_GET['filter']) ? $_GET['filter'] : '';
 $cat_filter = isset($_GET['category']) ? $_GET['category'] : '';
 $search_param = isset($_GET['search']) ? $_GET['search'] : '';
+$unit_param = isset($_GET['unit_id']) ? $_GET['unit_id'] : ''; // 🌟 รับค่าหน่วยงานจาก URL
 
 // 3. จัดการเงื่อนไข Filter (SQL)
 $where_clauses = [];
@@ -18,6 +19,10 @@ if ($loc_param != '') {
 }
 if ($cat_filter != '') {
     $where_clauses[] = "e.category_id = '" . $conn->real_escape_string($cat_filter) . "'";
+}
+// 🌟 เพิ่มเงื่อนไขกรองตามหน่วยงาน
+if ($unit_param != '') {
+    $where_clauses[] = "e.unit_id = '" . $conn->real_escape_string($unit_param) . "'";
 }
 if ($search_param != '') {
     $s_esc = $conn->real_escape_string($search_param);
@@ -35,16 +40,32 @@ if ($search_param != '') {
 
 $where_sql = count($where_clauses) > 0 ? " WHERE " . implode(" AND ", $where_clauses) : "";
 
-// 4. ดึงข้อมูลครุภัณฑ์จากฐานข้อมูล
-$sql = "SELECT e.*, c.category_name, l.location_name 
+// 4. ดึงข้อมูลครุภัณฑ์จากฐานข้อมูล (🌟 เพิ่ม LEFT JOIN units)
+$sql = "SELECT e.*, c.category_name, l.location_name, u.unit_name 
         FROM equipments e
         LEFT JOIN categories c ON e.category_id = c.id
         LEFT JOIN locations l ON e.location_id = l.id
+        LEFT JOIN units u ON e.unit_id = u.id
         $where_sql
         ORDER BY e.id DESC";
 
 $result = $conn->query($sql);
 $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
+
+// เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar และ Dropdown
+$units = [];
+// ใช้ @ เพื่อซ่อน Error แจ้งเตือนชั่วคราวในกรณีที่ยังไม่ได้สร้างตาราง units
+$units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
+if ($units_result && $units_result->num_rows > 0) {
+    while($row = $units_result->fetch_assoc()) {
+        $units[] = $row;
+    }
+} else {
+    $units = [
+        ['id' => 1, 'unit_name' => 'หน่วยโครงสร้างพื้นฐานเทคโนโลยีสารสนเทศดิจิทัล'],
+        ['id' => 2, 'unit_name' => 'หน่วยบริการสื่อและมัลติมีเดีย']
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -68,6 +89,7 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
         .table-custom th { background-color: #2b3c53; color: white; border: none; padding: 12px 8px; font-size: 0.9em; }
         .badge-age { background-color: #f8f9fa; color: #333; border: 1px solid #dee2e6; }
         .text-small { font-size: 0.85em; }
+        .hover-white:hover { color: #ffffff !important; }
         
         #bulk-action-bar {
             display: none; background: #fff; border: 2px solid #dc3545; border-radius: 10px;
@@ -82,6 +104,7 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
 
 <div class="container-fluid p-0">
     <div class="d-flex flex-nowrap">
+        
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
                     <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
@@ -89,13 +112,43 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
-                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white" aria-expanded="true">
+                
+                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white fw-bold active" aria-expanded="true">
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
+                
                 <div class="collapse show" id="equipmentMenu" style="background-color: #16202c;">
-                    <a href="equipments.php?location=ประสานมิตร" class="<?php echo ($loc_param == 'ประสานมิตร') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;"> ประสานมิตร</a>
-                    <a href="equipments.php?location=องครักษ์" class="<?php echo ($loc_param == 'องครักษ์') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white" style="padding-left: 45px;"> องครักษ์</a>
+                    
+                    <a href="#menuPsm" data-bs-toggle="collapse" class="text-white-50 hover-white d-block" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        ประสานมิตร <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse <?php echo ($loc_param == 'ประสานมิตร') ? 'show' : ''; ?>" id="menuPsm" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=ประสานมิตร" class="<?php echo ($loc_param == 'ประสานมิตร' && $unit_param == '') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=ประสานมิตร&unit_id=<?php echo $u['id']; ?>" class="<?php echo ($loc_param == 'ประสานมิตร' && $unit_param == $u['id']) ? 'text-warning fw-bold' : 'text-white-50'; ?> hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <a href="#menuOkr" data-bs-toggle="collapse" class="text-white-50 hover-white d-block mt-1" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        องครักษ์ <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse <?php echo ($loc_param == 'องครักษ์') ? 'show' : ''; ?>" id="menuOkr" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=องครักษ์" class="<?php echo ($loc_param == 'องครักษ์' && $unit_param == '') ? 'text-white fw-bold' : 'text-white-50'; ?> hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=องครักษ์&unit_id=<?php echo $u['id']; ?>" class="<?php echo ($loc_param == 'องครักษ์' && $unit_param == $u['id']) ? 'text-warning fw-bold' : 'text-white-50'; ?> hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
                 </div>
+                
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
@@ -121,24 +174,50 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
-                <h4> ทะเบียนรายการครุภัณฑ์ <?php echo $loc_param ? "- มศว $loc_param" : ""; ?> </h4>
-                <div class="d-flex gap-2">
-                    <form action="equipments.php" method="GET" class="d-flex gap-2">
+                <h4 class="m-0"> รายการครุภัณฑ์ 
+                    <?php 
+                    if($loc_param) { 
+                        echo "- $loc_param "; 
+                        if ($unit_param) {
+                            foreach($units as $u) {
+                                if($u['id'] == $unit_param) echo " <span class='text-primary fs-5'>(" . htmlspecialchars($u['unit_name']) . ")</span>";
+                            }
+                        }
+                    } 
+                    ?> 
+                </h4>
+                
+                <div class="d-flex gap-2 align-items-center">
+                    <form action="equipments.php" method="GET" class="d-flex gap-2 m-0">
                         <?php if($loc_param): ?><input type="hidden" name="location" value="<?php echo $loc_param; ?>"><?php endif; ?>
-                        <div class="input-group input-group-sm" style="width: 250px;">
+                        
+                        <div class="input-group input-group-sm" style="width: 200px;">
                             <input type="text" name="search" class="form-control" placeholder="ค้นหา..." value="<?php echo htmlspecialchars($search_param); ?>">
                             <button class="btn btn-dark" type="submit"><i class="fas fa-search"></i></button>
                         </div>
+                        
+                        <select name="unit_id" class="form-select form-select-sm" style="width: 170px;" onchange="this.form.submit()">
+                            <option value=""> หน่วยงานทั้งหมด </option>
+                            <?php foreach($units as $u): ?>
+                                <option value="<?php echo $u['id']; ?>" <?php echo ($unit_param == $u['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($u['unit_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
                         <select name="category" class="form-select form-select-sm" style="width: 150px;" onchange="this.form.submit()">
-                            <option value=""> หมวดหมู่ </option>
+                            <option value=""> หมวดหมู่ทั้งหมด </option>
                             <?php $all_categories->data_seek(0); while($c = $all_categories->fetch_assoc()): ?>
                                 <option value="<?php echo $c['id']; ?>" <?php echo ($cat_filter == $c['id']) ? 'selected' : ''; ?>>
-                                    <?php echo $c['category_name']; ?>
+                                    <?php echo htmlspecialchars($c['category_name']); ?>
                                 </option>
                             <?php endwhile; ?>
                         </select>
                     </form>
-                    <a href="equipment_add.php" class="btn btn-sm btn-primary"> เพิ่มครุภัณฑ์</a>
+                    
+                    <a href="equipment_add.php" class="btn btn-sm btn-primary text-nowrap">
+                        เพิ่มครุภัณฑ์
+                    </a>
                 </div>
             </div>
 
@@ -156,6 +235,7 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                     <th>วันที่รับ</th>
                                     <th>อายุการใช้งาน</th>
                                     <th>วิทยาเขต</th>
+                                    <th>หน่วยงาน</th>
                                     <th>สถานที่จัดเก็บ</th>
                                     <th>ผู้ครอบครอง</th>
                                     <th>สถานะ</th>
@@ -201,6 +281,19 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                             <?php echo htmlspecialchars($row['campus']) ?: '-'; ?>
                                         </span>
                                     </td>
+                                    
+                                    <td class="text-center text-info fw-bold">
+                                        <small class="<?php 
+                                        if ($row['unit_name'] == 'หน่วยโครงสร้างพื้นฐานเทคโนโลยีสารสนเทศดิจิทัล') {
+                                            echo 'text-primary'; 
+                                        } else {
+                                            echo 'text-info';  
+                                        }
+                                    ?>">
+                                        <?php echo htmlspecialchars($row['unit_name']) ?: '-'; ?>
+                                    </small>
+                                    </td>
+                                    
                                     <td class="text-center text-secondary"><?php echo htmlspecialchars($row['location_name']) ?: '-'; ?></td>
                                     
                                     <td class="text-center fw-bold"><?php echo htmlspecialchars($row['responsible_person']) ?: '-'; ?></td>
@@ -275,7 +368,7 @@ $(document).ready(function() {
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
         "columnDefs": [
-            { "orderable": false, "targets": [0, 12] } 
+            { "orderable": false, "targets": [0, 13] } // 🌟 เปลี่ยนเป็น 13 เพราะเพิ่มคอลัมน์หน่วยงานเข้ามา
         ]
     });
 });
