@@ -84,7 +84,9 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
     <div class="d-flex flex-nowrap">
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                <a href="index.php" class="text-white text-decoration-none d-block">
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                </a>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
@@ -152,8 +154,8 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                     <th>รหัสครุภัณฑ์</th>
                                     <th>ชื่อครุภัณฑ์</th>
                                     <th>ยี่ห้อ/รุ่น</th>
-                                    <th>อายุ (ปี)</th>
                                     <th>วันที่รับ</th>
+                                    <th>อายุการใช้งาน</th>
                                     <th>วิทยาเขต</th>
                                     <th>สถานที่จัดเก็บ</th>
                                     <th>ผู้ครอบครอง</th>
@@ -170,6 +172,17 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                         $entry_date = new DateTime($row['entry_date']);
                                         $diff = (new DateTime())->diff($entry_date);
                                         $status_time = $row['status_updated_at'];
+                                        $age_text = "";
+                                        if ($diff->y > 0) {
+                                            $age_text .= $diff->y . " ปี ";
+                                        }
+                                        if ($diff->m > 0) {
+                                            $age_text .= $diff->m . " เดือน";
+                                        }
+                                        // ถ้าอายุยังไม่ถึงเดือน ให้แสดงเป็นวัน
+                                        if ($diff->y == 0 && $diff->m == 0) {
+                                            $age_text = $diff->d . " วัน"; 
+                                        }
                                 ?>
                                 <tr>
                                     <td class="text-center">
@@ -179,8 +192,11 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
                                     <td class="fw-bold"><?php echo htmlspecialchars($row['equipment_code']); ?></td>
                                     <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
                                     <td><?php echo (htmlspecialchars($row['brand']) ?: '-') . " / " . (htmlspecialchars($row['model']) ?: '-'); ?></td>
-                                    <td class="text-center"><span class="badge badge-age"><?php echo $diff->y; ?> ปี</span></td>
+                                    
                                     <td class="text-center"><?php echo date('d/m/Y', strtotime($row['entry_date'])); ?></td>
+                                    
+                                    <td class="text-center"><span class="badge badge-age text-nowrap"><?php echo trim($age_text); ?></span></td>
+                                    
                                     <td class="text-center">
                                         <span class="badge <?php echo ($row['campus'] == 'ประสานมิตร') ? 'bg-danger' : 'bg-primary'; ?>">
                                             <?php echo htmlspecialchars($row['campus']) ?: '-'; ?>
