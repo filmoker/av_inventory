@@ -84,7 +84,6 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
     <div class="d-flex flex-nowrap">
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <a href="index.php" class="text-white text-decoration-none d-block">
                     <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
                 </a>
             </div>
