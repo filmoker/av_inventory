@@ -32,6 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_update'])) {
 
 $result_categories = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
 $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
+
+// ดึงข้อมูลยี่ห้อ (Brand) ทั้งหมดที่มีในระบบ และเรียง A-Z
+$brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
+$brand_result = $conn->query($brand_query);
 ?>
 
 <!DOCTYPE html>
@@ -69,20 +73,32 @@ $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name
                                 <label class="form-label fw-bold">ชื่อครุภัณฑ์</label>
                                 <input type="text" name="equipment_name" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                             </div>
+                            
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">แบรนด์/ยี่ห้อ</label>
-                                <input type="text" name="brand" class="form-control">
+                                <select name="brand" class="form-select">
+                                    <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                                    <?php 
+                                    $brand_result->data_seek(0);
+                                    while($b = $brand_result->fetch_assoc()): 
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($b['brand']); ?>">
+                                            <?php echo htmlspecialchars($b['brand']); ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                </select>
                             </div>
+                            
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">รุ่นสินค้า</label>
-                                <input type="text" name="model" class="form-control">
+                                <input type="text" name="model" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">หมวดหมู่</label>
                                 <select name="category_id" class="form-select">
                                     <option value="">-- ไม่เปลี่ยนแปลง --</option>
                                     <?php while($c = $result_categories->fetch_assoc()): ?>
-                                        <option value="<?php echo $c['id']; ?>"><?php echo $c['category_name']; ?></option>
+                                        <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['category_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
@@ -91,7 +107,7 @@ $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name
                                 <select name="location_id" class="form-select">
                                     <option value="">-- ไม่เปลี่ยนแปลง --</option>
                                     <?php while($l = $result_locations->fetch_assoc()): ?>
-                                        <option value="<?php echo $l['id']; ?>"><?php echo $l['location_name']; ?></option>
+                                        <option value="<?php echo $l['id']; ?>"><?php echo htmlspecialchars($l['location_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
@@ -105,7 +121,7 @@ $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">ผู้ครอบครอง</label>
-                                <input type="text" name="responsible_person" class="form-control">
+                                <input type="text" name="responsible_person" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">วันที่รับเข้า</label>
