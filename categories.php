@@ -69,6 +69,7 @@ if ($units_result && $units_result->num_rows > 0) {
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
                 
+                
                 <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white-50 hover-white">
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
@@ -104,7 +105,8 @@ if ($units_result && $units_result->num_rows > 0) {
                 </div>
                 
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
-                <a href="categories.php" class="text-white fw-bold active"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="units.php"><i class="fas fa-layer-group me-2"></i> จัดการหน่วยงาน</a>
                 <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
                 <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
