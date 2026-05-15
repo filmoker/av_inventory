@@ -57,7 +57,7 @@ if ($result->num_rows > 0) {
     <div class="mx-auto" style="max-width: 600px;">
         
         <div class="mb-4">
-            <h4><i class="fas fa-edit text-warning me-2"></i> แก้ไขหมวดหมู่ครุภัณฑ์</h4>
+            <h4>แก้ไขหมวดหมู่ครุภัณฑ์</h4>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="categories.php">จัดการหมวดหมู่</a></li>
