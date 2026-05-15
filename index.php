@@ -83,8 +83,8 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
                     <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
                 </a>
                 <div class="collapse <?php echo $is_equipment_menu ? 'show' : ''; ?>" id="equipmentMenu" style="background-color: #16202c;">
-                    <a href="equipments.php?location=ประสานมิตร" style="padding-left: 45px; font-size: 0.9em;">มศว ประสานมิตร</a>
-                    <a href="equipments.php?location=องครักษ์" style="padding-left: 45px; font-size: 0.9em;">มศว องครักษ์</a>
+                    <a href="equipments.php?location=ประสานมิตร" style="padding-left: 45px; font-size: 0.9em;"> ประสานมิตร</a>
+                    <a href="equipments.php?location=องครักษ์" style="padding-left: 45px; font-size: 0.9em;"> องครักษ์</a>
                 </div>
                 <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
                 <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
