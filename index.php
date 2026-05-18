@@ -36,8 +36,6 @@ $total = $conn->query($sql_total)->fetch_assoc()['count'];
 $ready = $conn->query($sql_ready)->fetch_assoc()['count'];
 $repair = $conn->query($sql_repair)->fetch_assoc()['count'];
 $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
-
-// 🌟 ส่วนที่เพิ่มใหม่: ดึงข้อมูลเพื่อนำไปสร้างกราฟ (Chart.js) โดยให้ตรงกับ Filter
 $cat_labels = [];
 $cat_data = [];
 $sql_cat = "SELECT c.category_name, COUNT(e.id) as qty 
