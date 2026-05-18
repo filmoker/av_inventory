@@ -173,8 +173,8 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
                     </a>
                     
                     <div class="vr mx-1 d-none d-md-block"></div> <div class="btn-group">
-                        <a href="index.php?location=ประสานมิตร" class="btn <?php echo ($current_loc == 'ประสานมิตร') ? 'btn-primary' : 'btn-outline-primary'; ?>">ประสานมิตร</a>
-                        <a href="index.php?location=องครักษ์" class="btn <?php echo ($current_loc == 'องครักษ์') ? 'btn-primary' : 'btn-outline-primary'; ?>">องครักษ์</a>
+                        <a href="index.php?location=ประสานมิตร" class="btn <?php echo ($current_loc == 'ประสานมิตร') ? 'btn-primary' : 'btn-outline-primary'; ?> fw-bold px-4">ประสานมิตร</a>
+                        <a href="index.php?location=องครักษ์" class="btn <?php echo ($current_loc == 'องครักษ์') ? 'btn-primary' : 'btn-outline-primary'; ?> fw-bold px-4">องครักษ์</a>
                     </div>
 
                     <div class="vr mx-1 d-none d-md-block"></div> <div class="btn-group flex-wrap">
