@@ -37,6 +37,22 @@ $ready = $conn->query($sql_ready)->fetch_assoc()['count'];
 $repair = $conn->query($sql_repair)->fetch_assoc()['count'];
 $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
 
+// 🌟 ส่วนที่เพิ่มใหม่: ดึงข้อมูลเพื่อนำไปสร้างกราฟ (Chart.js) โดยให้ตรงกับ Filter
+$cat_labels = [];
+$cat_data = [];
+$sql_cat = "SELECT c.category_name, COUNT(e.id) as qty 
+            FROM equipments e 
+            INNER JOIN categories c ON e.category_id = c.id 
+            WHERE 1=1 $where_filter 
+            GROUP BY c.id ORDER BY qty DESC";
+$res_cat = $conn->query($sql_cat);
+if ($res_cat) {
+    while($row = $res_cat->fetch_assoc()) {
+        $cat_labels[] = $row['category_name'];
+        $cat_data[] = $row['qty'];
+    }
+}
+
 $units = [];
 $units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
 if ($units_result && $units_result->num_rows > 0) {
@@ -85,6 +101,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
         .bg-warning-dark { background-color: #ffc107; color: #333; }
         .bg-danger-dark { background-color: #dc3545; }
         .icon-lg { font-size: 3rem; opacity: 0.4; }
+        .chart-wrapper { position: relative; height: 260px; width: 100%; }
     </style>
 </head>
 <body>
@@ -147,7 +164,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
 
         <div class="p-4 flex-grow-1" style="min-width: 0; overflow-x: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4>ระบบบริหารตรวจสอบครุภัณฑ์โสตทัศนูปกรณ์ v.1.0.0</h4>
+                <h4>ระบบบริหารตรวจสอบครุภัณฑ์โสตทัศนูปกรณ์ v.1.2.0</h4>
                 <span><i class="fas fa-user-circle"></i> ยินดีต้อนรับ, แอดมิน</span>
             </div>
 
@@ -218,6 +235,34 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
                                 <small>ชำรุด/จำหน่ายออก (รายการ)</small>
                             </div>
                             <i class="fas fa-times-circle icon-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h6 class="m-0 fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>สัดส่วนสถานะครุภัณฑ์</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <div class="chart-wrapper">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-0">
+                            <h6 class="m-0 fw-bold text-dark"><i class="fas fa-chart-bar me-2 text-success"></i>จำนวนครุภัณฑ์แยกตามหมวดหมู่</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <div class="chart-wrapper">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -295,6 +340,64 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
         </div> 
     </div> 
 </div> 
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// กราฟที่ 1: Doughnut Chart (สัดส่วนสถานะ)
+const ctxStatus = document.getElementById('statusChart').getContext('2d');
+new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: {
+        labels: ['พร้อมใช้งาน', 'กำลังซ่อม', 'ชำรุด'],
+        datasets: [{
+            data: [<?php echo $ready; ?>, <?php echo $repair; ?>, <?php echo $broken; ?>],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+
+// กราฟที่ 2: Bar Chart (แยกตามหมวดหมู่)
+const ctxCat = document.getElementById('categoryChart').getContext('2d');
+new Chart(ctxCat, {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode($cat_labels); ?>,
+        datasets: [{
+            label: 'จำนวน (รายการ)',
+            data: <?php echo json_encode($cat_data); ?>,
+            backgroundColor: 'rgba(23, 162, 184, 0.8)',
+            borderColor: '#17a2b8',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 } // จำนวนชิ้นเป็นเลขจำนวนเต็ม
+            }
+        }
+    }
+});
+</script>
+
 </body>
 </html>
