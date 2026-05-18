@@ -319,21 +319,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                     </td>
                                     
                                     <td class="text-start text-muted">
-                                        <div class="mb-1"><small><?php echo htmlspecialchars($row['remark']) ?: '-'; ?></small></div>
-                                        
-                                        <?php if (!empty($row['created_at']) && strtotime($row['created_at']) > 0): ?>
-                                        <div class="text-primary mt-2" style="font-size: 0.70rem;">
-                                            <i class="fas fa-plus-circle me-1"></i>เพิ่ม: Admin
-                                            (<?php echo date('d/m/Y H:i', strtotime($row['created_at'])); ?> น.)
-                                        </div>
-                                        <?php endif; ?>
-
-                                        <?php if (!empty($row['updated_at']) && strtotime($row['updated_at']) > 0): ?>
-                                        <div class="text-secondary mt-1" style="font-size: 0.70rem;">
-                                            <i class="fas fa-user-edit me-1"></i>แก้: Admin
-                                            (<?php echo date('d/m/Y H:i', strtotime($row['updated_at'])); ?> น.)
-                                        </div>
-                                        <?php endif; ?>
+                                        <small><?php echo htmlspecialchars($row['remark']) ?: '-'; ?></small>
                                     </td>
                                     
                                     <td class="text-center text-nowrap">
@@ -370,7 +356,7 @@ $(document).ready(function() {
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
         "columnDefs": [
-            { "orderable": false, "targets": [0, 13] } // 🌟 เปลี่ยนเป็น 13 เพราะเพิ่มคอลัมน์หน่วยงานเข้ามา
+            { "orderable": false, "targets": [0, 13] } // 🌟 เปลี่ยนเป็น 13 เพราะคอลัมน์รูปหายไปแล้ว
         ]
     });
 });
