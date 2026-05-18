@@ -28,13 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $unit_id = !empty($_POST['unit_id']) ? $_POST['unit_id'] : "NULL";
     $campus = $conn->real_escape_string($_POST['campus']);
     $responsible_person = $conn->real_escape_string(trim($_POST['responsible_person']));
-    $status = $conn->real_escape_string($_POST['status']);
     
-    if ($status == 'ชำรุด' || $status == 'กำลังซ่อม') {
-        $status_updated_at = !empty($_POST['status_updated_at']) ? "'".$conn->real_escape_string($_POST['status_updated_at'])."'" : "NULL";
-    } else {
-        $status_updated_at = "NULL";
-    }
+    $status = 'พร้อมใช้งาน';
+    $status_updated_at = "NULL";
     
     $entry_date = !empty($_POST['entry_date']) ? "'".$conn->real_escape_string($_POST['entry_date'])."'" : "NULL";
     $remark = $conn->real_escape_string(trim($_POST['remark']));
@@ -101,11 +97,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                </a>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
-                <a href="equipments.php" class="active"><i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์</a>
+                
+                <a href="#equipmentMenu" data-bs-toggle="collapse" class="text-white fw-bold active" aria-expanded="true">
+                    <i class="fas fa-desktop me-2"></i> รายการครุภัณฑ์
+                </a>
+                
+                <div class="collapse show" id="equipmentMenu" style="background-color: #16202c;">
+                    <a href="#menuPsm" data-bs-toggle="collapse" class="text-white-50 hover-white d-block" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        ประสานมิตร <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuPsm" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=ประสานมิตร" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=ประสานมิตร&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <a href="#menuOkr" data-bs-toggle="collapse" class="text-white-50 hover-white d-block mt-1" style="padding: 10px 20px 10px 45px; font-size: 0.9em;">
+                        องครักษ์ <i class="fas fa-caret-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse" id="menuOkr" style="background-color: #0f1722;">
+                        <a href="equipments.php?location=องครักษ์" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.85em;">
+                            <i class="fas fa-list me-1"></i> ดูทั้งหมด
+                        </a>
+                        <?php foreach($units as $u): ?>
+                        <a href="equipments.php?location=องครักษ์&unit_id=<?php echo $u['id']; ?>" class="text-white-50 hover-white d-block py-2" style="padding-left: 55px; font-size: 0.75em; line-height: 1.4;">
+                            - <?php echo htmlspecialchars($u['unit_name']); ?>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <a href="locations.php"><i class="fas fa-map-marker-alt me-2"></i> จัดการสถานที่</a>
+                <a href="categories.php"><i class="fas fa-tags me-2"></i> จัดการหมวดหมู่</a>
+                <a href="units.php"><i class="fas fa-layer-group me-2"></i> จัดการหน่วยงาน</a>
+                <a href="report.php"><i class="fas fa-print me-2"></i> พิมพ์รายงานสรุปยอด</a>
+                <a href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
             </nav>
         </div>
 
@@ -219,16 +255,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">สถานะ <span class="text-danger">*</span></label>
-                                <select class="form-select" id="status" name="status" onchange="toggleStatusDate(this.value)" required>
-                                    <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
-                                    <option value="ชำรุด">ชำรุด</option>
-                                    <option value="กำลังซ่อม">กำลังซ่อม</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3" id="status_date_div" style="display: none;">
-                                <label for="status_updated_at" class="form-label text-danger">วันที่แจ้งชำรุด/ส่งซ่อม <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control border-danger" id="status_updated_at" name="status_updated_at">
+                                <label class="form-label text-muted">สถานะเริ่มต้น (ระบบกำหนดอัตโนมัติ)</label>
+                                <input type="text" class="form-control bg-light text-success fw-bold" value="พร้อมใช้งาน" readonly>
+                                <input type="hidden" name="status" value="พร้อมใช้งาน">
+                                <div class="form-text mt-1 text-muted">
+                                    <i class="fas fa-info-circle"></i> ครุภัณฑ์ที่ขึ้นทะเบียนใหม่จะพร้อมใช้งานเสมอ หากชำรุดในภายหลังให้ใช้เมนู "เพิ่มบันทึกการซ่อม" ในหน้ารายละเอียด
+                                </div>
                             </div>
                         </div>
 
@@ -252,15 +284,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function toggleStatusDate(status) {
-    const dateDiv = document.getElementById('status_date_div');
-    const dateInput = document.getElementById('status_updated_at');
-    if (status === 'ชำรุด' || status === 'กำลังซ่อม') {
-        dateDiv.style.display = 'block'; dateInput.required = true;
-    } else {
-        dateDiv.style.display = 'none'; dateInput.required = false; dateInput.value = '';
-    }
-}
 const brandSelect = document.getElementById('brand_select');
 const brandOtherGroup = document.getElementById('brand_other_group');
 const brandOtherInput = document.getElementById('brand_other');
@@ -273,8 +296,8 @@ brandSelect.addEventListener('change', function() {
 });
 btnCancelBrand.addEventListener('click', function() {
     brandOtherGroup.style.display = 'none'; brandOtherInput.required = false; brandOtherInput.value = '';
-    brandSelect.style.display = 'block'; brandSelect.value = '';                 
+    brandSelect.style.display = 'block'; brandSelect.value = '';                
 });
 </script>
 </body>
-</html>
+</html> 
