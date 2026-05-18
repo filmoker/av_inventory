@@ -33,9 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_repair'])) {
                    VALUES ($equipment_id, '$repair_detail', '$reported_date', $completed_date, $repair_cost, '$repair_status', '$technician_name')";
 
     if ($conn->query($sql_insert) === TRUE) {
-        
-        // 🌟 อัปเดตสถานะของครุภัณฑ์ในตารางหลักให้อัตโนมัติด้วย 🌟
-        // เช่น ถ้าแจ้งซ่อม -> สถานะจะเป็น 'กำลังซ่อม' / ถ้าซ่อมเสร็จแล้ว -> สถานะจะเป็น 'พร้อมใช้งาน'
         $new_eq_status = ($repair_status == 'ซ่อมเสร็จแล้ว') ? 'พร้อมใช้งาน' : 'กำลังซ่อม';
         $update_eq = "UPDATE equipments SET status = '$new_eq_status', status_updated_at = '$reported_date' WHERE id = $equipment_id";
         $conn->query($update_eq);
@@ -66,11 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_repair'])) {
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            
-            <div class="mb-3">
-                <a href="equipment_view.php?id=<?php echo $eq_id; ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> กลับไปหน้ารายละเอียด</a>
-            </div>
-
             <div class="card shadow-sm border-0" style="border-radius: 12px;">
                 <div class="card-header bg-warning py-3">
                     <h5>เพิ่มบันทึกการแจ้งซ่อม</h5>
@@ -128,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_repair'])) {
                         <hr class="text-muted opacity-25">
 
                         <div class="text-end mt-3">
+                            <a href="equipment_view.php?id=<?php echo $eq_id; ?>" class="btn btn-secondary px-5 py-2">กลับไปหน้ารายละเอียด</a>
                             <button type="submit" name="save_repair" class="btn btn-warning fw-bold text-dark px-5 py-2"> บันทึกข้อมูล
                             </button>
                         </div>
