@@ -163,31 +163,42 @@ if ($units_res) {
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
-                                    <thead class="table-light">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>วันที่แจ้ง</th>
+                                        <th>รายละเอียดการซ่อม</th>
+                                        <th>ช่างผู้ซ่อม</th>
+                                        <th>วันที่เสร็จ</th>
+                                        <th>สถานะ</th>
+                                        <th>จัดการ</th> 
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if($result_repair->num_rows > 0): ?>
+                                        <?php while($rep = $result_repair->fetch_assoc()): ?>
                                         <tr>
-                                            <th>วันที่แจ้ง</th>
-                                            <th>รายละเอียดการซ่อม</th>
-                                            <th>ช่างผู้ซ่อม</th>
-                                            <th>วันที่เสร็จ</th>
-                                            <th>สถานะ</th>
+                                            <td><?php echo date('d/m/Y', strtotime($rep['reported_date'])); ?></td>
+                                            <td><?php echo htmlspecialchars($rep['repair_detail']); ?></td>
+                                            <td><?php echo htmlspecialchars($rep['technician_name']) ?: '-'; ?></td>
+                                            <td><?php echo $rep['completed_date'] ? date('d/m/Y', strtotime($rep['completed_date'])) : '-'; ?></td>
+                                            <td>
+                                                <span class="badge <?php echo ($rep['repair_status'] == 'ซ่อมเสร็จแล้ว') ? 'bg-success' : 'bg-secondary'; ?>">
+                                                    <?php echo $rep['repair_status']; ?>
+                                                </span>
+                                            </td>
+                                            
+                                            <td>
+                                                <a href="repair_edit.php?id=<?php echo $rep['id']; ?>&eq_id=<?php echo $eq['id']; ?>" class="btn btn-sm btn-outline-warning" title="อัปเดตสถานะ/แก้ไข">
+                                                    <i class="fas fa-edit"></i> แก้ไข
+                                                </a>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if($result_repair->num_rows > 0): ?>
-                                            <?php while($rep = $result_repair->fetch_assoc()): ?>
-                                            <tr>
-                                                <td><?php echo date('d/m/Y', strtotime($rep['reported_date'])); ?></td>
-                                                <td><?php echo htmlspecialchars($rep['repair_detail']); ?></td>
-                                                <td><?php echo htmlspecialchars($rep['technician_name']) ?: '-'; ?></td>
-                                                <td><?php echo $rep['completed_date'] ? date('d/m/Y', strtotime($rep['completed_date'])) : '-'; ?></td>
-                                                <td><span class="badge bg-secondary"><?php echo $rep['repair_status']; ?></span></td>
-                                            </tr>
-                                            <?php endwhile; ?>
-                                        <?php else: ?>
-                                            <tr><td colspan="5" class="text-center py-4 text-muted">ยังไม่เคยมีประวัติการซ่อม</td></tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr><td colspan="6" class="text-center py-4 text-muted">ยังไม่เคยมีประวัติการซ่อม</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                             </div>
                         </div>
                     </div>
