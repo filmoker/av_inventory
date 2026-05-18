@@ -141,6 +141,15 @@ if ($units_res) {
                                 <div class="col-md-6"><span class="info-label">สถานะปัจจุบัน:</span> 
                                     <span class="badge <?php echo ($eq['status'] == 'พร้อมใช้งาน') ? 'bg-success' : 'bg-danger'; ?>"><?php echo $eq['status']; ?></span>
                                 </div>
+                                
+                                <div class="col-md-6">
+                                    <span class="info-label"><i class="fas fa-plus-circle text-primary me-1"></i> วันที่เพิ่มข้อมูล:</span> 
+                                    <?php echo !empty($eq['created_at']) ? date('d/m/Y H:i', strtotime($eq['created_at'])) . ' น.' : '-'; ?>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="info-label"><i class="fas fa-user-edit text-secondary me-1"></i> แก้ไขล่าสุด:</span> 
+                                    <?php echo !empty($eq['updated_at']) ? date('d/m/Y H:i', strtotime($eq['updated_at'])) . ' น.' : '-'; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -187,5 +196,6 @@ if ($units_res) {
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
