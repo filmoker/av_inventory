@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_repair'])) {
                     
                     <div class="alert alert-light border shadow-sm mb-4">
                         <small class="text-muted d-block">กำลังทำรายการของครุภัณฑ์:</small>
-                        <span class="fw-bold fs-5 text-primary"><?php echo htmlspecialchars($eq_data['equipment_name']); ?></span> 
+                        <span class="fw-bold fs-5 text-dark"><?php echo htmlspecialchars($eq_data['equipment_name']); ?></span> 
                         <span class="badge bg-dark ms-2"><?php echo htmlspecialchars($eq_data['equipment_code']); ?></span>
                     </div>
 
