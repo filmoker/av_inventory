@@ -301,20 +301,30 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">สถานะ <span class="text-danger">*</span></label>
-                                <select class="form-select" id="status" name="status" onchange="toggleStatusDate(this.value)" required>
-                                    <option value="พร้อมใช้งาน" <?php echo ($eq['status'] == 'พร้อมใช้งาน') ? 'selected' : ''; ?>>พร้อมใช้งาน</option>
-                                    <option value="ชำรุด" <?php echo ($eq['status'] == 'ชำรุด') ? 'selected' : ''; ?>>ชำรุด</option>
-                                    <option value="กำลังซ่อม" <?php echo ($eq['status'] == 'กำลังซ่อม') ? 'selected' : ''; ?>>กำลังซ่อม</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3" id="status_date_div" style="<?php echo ($eq['status'] == 'ชำรุด' || $eq['status'] == 'กำลังซ่อม') ? 'display:block;' : 'display:none;'; ?>">
-                                <label for="status_updated_at" class="form-label text-danger">วันที่แจ้งชำรุด/ส่งซ่อม <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control border-danger" id="status_updated_at" name="status_updated_at" value="<?php echo $eq['status_updated_at'] ? date('Y-m-d', strtotime($eq['status_updated_at'])) : ''; ?>">
+                        <div class="row align-items-start">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label text-muted">สถานะปัจจุบัน (ล็อคการแก้ไข)</label>
+                            <input type="text" class="form-control bg-light fw-bold <?php 
+                                if($eq['status']=='พร้อมใช้งาน') echo 'text-success'; 
+                                elseif($eq['status']=='กำลังซ่อม') echo 'text-warning'; 
+                                else echo 'text-danger'; ?>" 
+                                value="<?php echo htmlspecialchars($eq['status']); ?>" readonly>
+                            
+                            <input type="hidden" name="status" value="<?php echo htmlspecialchars($eq['status']); ?>">
+                            <input type="hidden" name="status_updated_at" value="<?php echo $eq['status_updated_at']; ?>">
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label d-block">&nbsp;</label> <a href="equipment_view.php?id=<?php echo $eq['id']; ?>" class="btn btn-outline-info"> ไปหน้าจัดการประวัติการซ่อม
+                            </a>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <div class="form-text text-danger m-0">
+                                <i class="fas fa-info-circle"></i> การเปลี่ยนสถานะ ชำรุด/ส่งซ่อม กรุณาทำผ่านการ <strong>"เพิ่มบันทึกการซ่อม"</strong> ในหน้ารายละเอียด
                             </div>
                         </div>
+                    </div>
 
                         <div class="mb-4">
                             <label for="remark" class="form-label">หมายเหตุ</label>
