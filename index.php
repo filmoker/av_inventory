@@ -162,7 +162,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
 
         <div class="p-4 flex-grow-1" style="min-width: 0; overflow-x: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4>ระบบบริหารตรวจสอบครุภัณฑ์โสตทัศนูปกรณ์ v.1.2.0</h4>
+                <h4>ระบบบริหารจัดการครุภัณฑ์โสตทัศนูปกรณ์ v.1.2.0</h4>
                 <span><i class="fas fa-user-circle"></i> ยินดีต้อนรับ, แอดมิน</span>
             </div>
 
