@@ -166,7 +166,7 @@ $all_units = $conn->query("SELECT * FROM units ORDER BY id ASC");
     <div class="report-paper">
         <div class="report-header">
             <h4 class="fw-bold m-0">รายงานสรุปยอดและสถานะครุภัณฑ์โสตทัศนูปกรณ์</h4>
-            <p class="text-muted m-0">มหาวิทยาลัยศรีนครินทรวิโรฒ (ข้อมูล ณ วันที่ <?php echo date('d/m/Y'); ?>)</p>
+            <p class="text-muted m-0">สำนักหอสมุดกลาง มหาวิทยาลัยศรีนครินทรวิโรฒ (ข้อมูล ณ วันที่ <?php echo date('d/m/Y'); ?>)</p>
         </div>
 
         <div class="row g-3 mb-4">
