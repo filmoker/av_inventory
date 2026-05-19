@@ -36,9 +36,12 @@ $total = $conn->query($sql_total)->fetch_assoc()['count'];
 $ready = $conn->query($sql_ready)->fetch_assoc()['count'];
 $repair = $conn->query($sql_repair)->fetch_assoc()['count'];
 $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
+
 $cat_labels = [];
 $cat_data = [];
-$sql_cat = "SELECT c.category_name, COUNT(e.id) as qty 
+$cat_ids = []; // เพิ่มตัวแปรเก็บรหัส ID ของหมวดหมู่เอาไว้ใช้งานใน JavaScript
+
+$sql_cat = "SELECT c.id, c.category_name, COUNT(e.id) as qty 
             FROM equipments e 
             INNER JOIN categories c ON e.category_id = c.id 
             WHERE 1=1 $where_filter 
@@ -46,6 +49,7 @@ $sql_cat = "SELECT c.category_name, COUNT(e.id) as qty
 $res_cat = $conn->query($sql_cat);
 if ($res_cat) {
     while($row = $res_cat->fetch_assoc()) {
+        $cat_ids[] = $row['id']; // เก็บ ID หมวดหมู่
         $cat_labels[] = $row['category_name'];
         $cat_data[] = $row['qty'];
     }
@@ -109,8 +113,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
-                </a>
+                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
             </div>
             <nav class="mt-3">
                 <a href="index.php" class="<?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
@@ -278,7 +281,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
                                             <th>รหัสครุภัณฑ์</th>
                                             <th>ชื่อ/รุ่นอุปกรณ์</th>
                                             <th>สถานที่จัดเก็บ</th> 
-                                            <th class="text-center">สถานะ</th>
+                                            <th class="text-center">htmlสถานะ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -344,6 +347,13 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+// เตรียมตัวแปรลิงก์ของหน้ารายการแยกตามสถานะ
+const statusLinks = [
+    '<?php echo $ready_link; ?>',
+    '<?php echo $repair_link; ?>',
+    '<?php echo $broken_link; ?>'
+];
+
 // กราฟที่ 1: Doughnut Chart (สัดส่วนสถานะ)
 const ctxStatus = document.getElementById('statusChart').getContext('2d');
 new Chart(ctxStatus, {
@@ -362,9 +372,22 @@ new Chart(ctxStatus, {
         maintainAspectRatio: false,
         plugins: {
             legend: { position: 'bottom' }
+        },
+        // เพิ่มระบบคลิกและเปลี่ยนเมาส์เป็นรูปนิ้วมือตอนชี้กราฟวงกลม
+        onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+        },
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                window.location.href = statusLinks[index];
+            }
         }
     }
 });
+
+// ดึงอาเรย์รหัส ID หมวดหมู่จากฝั่ง PHP มาไว้ที่ฝั่ง JavaScript
+const catIds = <?php echo json_encode($cat_ids); ?>;
 
 // กราฟที่ 2: Bar Chart (แยกตามหมวดหมู่)
 const ctxCat = document.getElementById('categoryChart').getContext('2d');
@@ -390,7 +413,24 @@ new Chart(ctxCat, {
         scales: {
             y: {
                 beginAtZero: true,
-                ticks: { stepSize: 1 } // จำนวนชิ้นเป็นเลขจำนวนเต็ม
+                ticks: { stepSize: 1 }
+            }
+        },
+        // เพิ่มระบบคลิกและเปลี่ยนรูปเมาส์ที่แท่งกราฟหมวดหมู่เพื่อกระโดดไปหน้ากรองข้อมูล
+        onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+        },
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const clickedCatId = catIds[index];
+                
+                // สร้าง URL พื้นฐานเพื่อสืบทอดค่าการกดฟิลเตอร์สถานที่และหน่วยงานจากหน้าแรกไปด้วย
+                let url = 'equipments.php?category_id=' + clickedCatId;
+                <?php if($current_loc != '') echo "url += '&location=" . urlencode($current_loc) . "';"; ?>
+                <?php if($current_unit != '') echo "url += '&unit_id=" . urlencode($current_unit) . "';"; ?>
+                
+                window.location.href = url;
             }
         }
     }
