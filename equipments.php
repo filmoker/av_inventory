@@ -5,9 +5,16 @@ require_once 'db_connect.php';
 // 2. รับค่าจาก URL สำหรับการกรองข้อมูล
 $loc_param = isset($_GET['location']) ? $_GET['location'] : '';
 $filter_param = isset($_GET['filter']) ? $_GET['filter'] : '';
-$cat_filter = isset($_GET['category']) ? $_GET['category'] : '';
 $search_param = isset($_GET['search']) ? $_GET['search'] : '';
-$unit_param = isset($_GET['unit_id']) ? $_GET['unit_id'] : ''; // 🌟 รับค่าหน่วยงานจาก URL
+$unit_param = isset($_GET['unit_id']) ? $_GET['unit_id'] : ''; // รับค่าหน่วยงานจาก URL
+
+// ดักรับค่าหมวดหมู่ให้รองรับทั้งที่เลือกจาก Dropdown (category) และกดมาจากกราฟหน้า Dashboard (category_id)
+$cat_filter = '';
+if (isset($_GET['category']) && $_GET['category'] != '') {
+    $cat_filter = $_GET['category'];
+} elseif (isset($_GET['category_id']) && $_GET['category_id'] != '') {
+    $cat_filter = $_GET['category_id'];
+}
 
 // 3. จัดการเงื่อนไข Filter (SQL)
 $where_clauses = [];
@@ -20,7 +27,7 @@ if ($loc_param != '') {
 if ($cat_filter != '') {
     $where_clauses[] = "e.category_id = '" . $conn->real_escape_string($cat_filter) . "'";
 }
-// 🌟 เพิ่มเงื่อนไขกรองตามหน่วยงาน
+// เพิ่มเงื่อนไขกรองตามหน่วยงาน
 if ($unit_param != '') {
     $where_clauses[] = "e.unit_id = '" . $conn->real_escape_string($unit_param) . "'";
 }
@@ -54,7 +61,6 @@ $all_categories = $conn->query("SELECT * FROM categories ORDER BY category_name 
 
 // เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar และ Dropdown
 $units = [];
-// ใช้ @ เพื่อซ่อน Error แจ้งเตือนชั่วคราวในกรณีที่ยังไม่ได้สร้างตาราง units
 $units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
 if ($units_result && $units_result->num_rows > 0) {
     while($row = $units_result->fetch_assoc()) {
@@ -107,8 +113,7 @@ if ($units_result && $units_result->num_rows > 0) {
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
-                </a>
+                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
@@ -206,11 +211,18 @@ if ($units_result && $units_result->num_rows > 0) {
 
                         <select name="category" class="form-select form-select-sm" style="width: 150px;" onchange="this.form.submit()">
                             <option value=""> หมวดหมู่ทั้งหมด </option>
-                            <?php $all_categories->data_seek(0); while($c = $all_categories->fetch_assoc()): ?>
+                            <?php 
+                            if($all_categories && $all_categories->num_rows > 0):
+                                $all_categories->data_seek(0); 
+                                while($c = $all_categories->fetch_assoc()): 
+                            ?>
                                 <option value="<?php echo $c['id']; ?>" <?php echo ($cat_filter == $c['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($c['category_name']); ?>
                                 </option>
-                            <?php endwhile; ?>
+                            <?php 
+                                endwhile; 
+                            endif; 
+                            ?>
                         </select>
                     </form>
                     
@@ -289,8 +301,8 @@ if ($units_result && $units_result->num_rows > 0) {
                                             echo 'text-info';  
                                         }
                                     ?>">
-                                        <?php echo htmlspecialchars($row['unit_name']) ?: '-'; ?>
-                                    </small>
+                                            <?php echo htmlspecialchars($row['unit_name']) ?: '-'; ?>
+                                        </small>
                                     </td>
                                     
                                     <td class="text-center text-secondary"><?php echo htmlspecialchars($row['location_name']) ?: '-'; ?></td>
@@ -324,15 +336,18 @@ if ($units_result && $units_result->num_rows > 0) {
                                     
                                     <td class="text-center text-nowrap">
                                         <div class="d-flex justify-content-center gap-1">
-                                        <a href="equipment_view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-info" title="ดูรายละเอียด">
-                                            <i class="fas fa-list-ul"></i>
-                                        </a>
-                                        <a href="equipment_edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
-                                        <a href="equipment_delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบข้อมูล?')"><i class="fas fa-trash"></i></a>
-                                    </div>
+                                            <a href="equipment_view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-info" title="ดูรายละเอียด">
+                                                <i class="fas fa-list-ul"></i>
+                                            </a>
+                                            <a href="equipment_edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a>
+                                            <a href="equipment_delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบข้อมูล?')"><i class="fas fa-trash"></i></a>
+                                        </div>
                                     </td>
                                 </tr>
-                                <?php endwhile; endif; ?>
+                                <?php 
+                                    endwhile; 
+                                endif; 
+                                ?>
                             </tbody>
                         </table>
                     </div>
@@ -356,7 +371,7 @@ $(document).ready(function() {
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
         "columnDefs": [
-            { "orderable": false, "targets": [0, 13] } // 🌟 เปลี่ยนเป็น 13 เพราะคอลัมน์รูปหายไปแล้ว
+            { "orderable": false, "targets": [0, 13] }
         ]
     });
 });
