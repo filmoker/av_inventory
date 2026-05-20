@@ -281,7 +281,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
                                             <th>รหัสครุภัณฑ์</th>
                                             <th>ชื่อ/รุ่นอุปกรณ์</th>
                                             <th>สถานที่จัดเก็บ</th> 
-                                            <th class="text-center">htmlสถานะ</th>
+                                            <th class="text-center">สถานะ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
