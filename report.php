@@ -1,9 +1,14 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin_id'])) {
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
     header("Location: login.php");
     exit();
 }
+
 require_once 'db_connect.php';
 
 // --- 1. รับค่าการกรองจาก URL ---
@@ -150,7 +155,7 @@ $all_units = $conn->query("SELECT * FROM units ORDER BY id ASC");
     </div>
 
     <div class="d-flex justify-content-between mb-3 no-print">
-        <a href="equipments.php" class="btn btn-dark btn-sm px-3"><i class="fas fa-arrow-left me-1"></i> กลับหน้ารายการ</a>
+        <a href="index.php" class="btn btn-dark btn-sm px-3"><i class="fas fa-arrow-left me-1"></i> กลับหน้ารายการ</a>
         <div class="d-flex gap-2">
             <a href="export_excel.php?campus=<?php echo $filter_campus; ?>&unit_id=<?php echo $filter_unit; ?>&category=<?php echo $filter_cat; ?>&location=<?php echo $filter_loc; ?>" 
                class="btn btn-outline-success btn-sm px-3">
