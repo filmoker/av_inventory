@@ -1,4 +1,12 @@
 <?php
+session_start(); // เปิด Session เพื่อดึงชื่อคนล็อกอินไปบันทึก Log
+
+// ป้องกันคนก๊อปปี้ URL มาเข้าโดยไม่ได้ล็อกอิน
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 require_once 'db_connect.php';
 
 if (!isset($_GET['id']) && !isset($_POST['id'])) {
@@ -94,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 WHERE id = $id";
 
         if ($conn->query($sql) === TRUE) {
+            // เพิ่มระบบบันทึกประวัติ (Log) ตรงนี้ เมื่ออัปเดตข้อมูลสำเร็จ
+            $username = $_SESSION['username'];
+            save_log($conn, $username, 'แก้ไขข้อมูล', "แก้ไขข้อมูลครุภัณฑ์ รหัส: {$equipment_code} ({$equipment_name})");
+
             header("Location: equipments.php?msg=edit_success");
             exit();
         } else {

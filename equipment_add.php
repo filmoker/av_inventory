@@ -1,4 +1,12 @@
 <?php
+session_start(); // เปิด Session เพื่อให้ระบบจำได้ว่าใครกำลังเพิ่มข้อมูล
+
+// ป้องกันคนก๊อปปี้ URL มาเข้าโดยไม่ได้ล็อกอิน
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 require_once 'db_connect.php';
 
 $cat_result = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
@@ -66,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 )";
 
         if ($conn->query($sql) === TRUE) {
+            //  เพิ่มระบบบันทึกประวัติ (Log) ตรงนี้ เมื่อเพิ่มข้อมูลสำเร็จ
+            $username = $_SESSION['username'];
+            save_log($conn, $username, 'เพิ่มข้อมูล', "เพิ่มครุภัณฑ์ รหัส: {$equipment_code} ({$equipment_name})");
+
             header("Location: equipments.php?msg=add_success");
             exit();
         } else {
