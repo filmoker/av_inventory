@@ -1,5 +1,14 @@
 <?php
-// ดึงไฟล์เชื่อมต่อฐานข้อมูลมาใช้งาน
+session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 require_once 'db_connect.php';
 
 // --- ส่วนจัดการ PHP ---
@@ -39,7 +48,7 @@ $broken = $conn->query($sql_broken)->fetch_assoc()['count'];
 
 $cat_labels = [];
 $cat_data = [];
-$cat_ids = []; // เพิ่มตัวแปรเก็บรหัส ID ของหมวดหมู่เอาไว้ใช้งานใน JavaScript
+$cat_ids = []; 
 
 $sql_cat = "SELECT c.id, c.category_name, COUNT(e.id) as qty 
             FROM equipments e 
@@ -49,7 +58,7 @@ $sql_cat = "SELECT c.id, c.category_name, COUNT(e.id) as qty
 $res_cat = $conn->query($sql_cat);
 if ($res_cat) {
     while($row = $res_cat->fetch_assoc()) {
-        $cat_ids[] = $row['id']; // เก็บ ID หมวดหมู่
+        $cat_ids[] = $row['id']; 
         $cat_labels[] = $row['category_name'];
         $cat_data[] = $row['qty'];
     }
@@ -166,7 +175,21 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
         <div class="p-4 flex-grow-1" style="min-width: 0; overflow-x: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4>ระบบบริหารจัดการครุภัณฑ์โสตทัศนูปกรณ์ v.1.2.0</h4>
-                <span><i class="fas fa-user-circle"></i> ยินดีต้อนรับ, แอดมิน</span>
+                
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle text-black border-0 shadow-sm rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i> ยินดีต้อนรับ, 
+                        <?php echo isset($_SESSION['full_name']) ? $_SESSION['full_name'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'ผู้ใช้งาน'); ?>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                        <li>
+                            <a class="dropdown-item py-2" href="activity_logs.php">
+                                <i class="fas fa-history text-secondary me-2"></i> ประวัติการใช้งาน
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
             </div>
 
             <div class="mb-4">
@@ -373,7 +396,6 @@ new Chart(ctxStatus, {
         plugins: {
             legend: { position: 'bottom' }
         },
-        // เพิ่มระบบคลิกและเปลี่ยนเมาส์เป็นรูปนิ้วมือตอนชี้กราฟวงกลม
         onHover: (event, chartElement) => {
             event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
         },
@@ -416,7 +438,6 @@ new Chart(ctxCat, {
                 ticks: { stepSize: 1 }
             }
         },
-        // เพิ่มระบบคลิกและเปลี่ยนรูปเมาส์ที่แท่งกราฟหมวดหมู่เพื่อกระโดดไปหน้ากรองข้อมูล
         onHover: (event, chartElement) => {
             event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
         },
@@ -425,7 +446,6 @@ new Chart(ctxCat, {
                 const index = elements[0].index;
                 const clickedCatId = catIds[index];
                 
-                // สร้าง URL พื้นฐานเพื่อสืบทอดค่าการกดฟิลเตอร์สถานที่และหน่วยงานจากหน้าแรกไปด้วย
                 let url = 'equipments.php?category_id=' + clickedCatId;
                 <?php if($current_loc != '') echo "url += '&location=" . urlencode($current_loc) . "';"; ?>
                 <?php if($current_unit != '') echo "url += '&unit_id=" . urlencode($current_unit) . "';"; ?>
