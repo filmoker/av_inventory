@@ -1,40 +1,43 @@
 <?php
+session_start();
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
 require_once 'db_connect.php';
 
-// เช็กว่ามีการส่งค่า ids มาหรือไม่
-if (isset($_GET['ids']) && !empty($_GET['ids'])) {
+// เช็กว่ามีการส่ง Array ของ ID มาหรือไม่
+if (isset($_POST['eq_ids']) && is_array($_POST['eq_ids'])) {
     
-    // รับค่า ids ที่ต่อกันมาด้วยลูกน้ำ (เช่น 384,383,382)
-    $ids_string = $_GET['ids'];
-    
-    // ป้องกัน SQL Injection โดยการหั่นข้อความและแปลงเป็นตัวเลขเท่านั้น
-    $id_array = explode(',', $ids_string);
-    $clean_ids = [];
-    foreach ($id_array as $id) {
-        $clean_id = intval(trim($id));
-        if ($clean_id > 0) {
-            $clean_ids[] = $clean_id;
-        }
+    // แปลงทุก ID ให้เป็นตัวเลขเพื่อความปลอดภัย
+    $ids = array_map('intval', $_POST['eq_ids']);
+    $id_list = implode(',', $ids); // แปลงเป็นข้อความเช่น "1,2,3,4"
+
+    // สเต็ป 1: ดึงรหัสครุภัณฑ์ทั้งหมดที่จะโดนลบ มาเตรียมไว้เขียน Log
+    $query = $conn->query("SELECT equipment_code FROM equipments WHERE id IN ($id_list)");
+    $deleted_codes = [];
+    while($row = $query->fetch_assoc()) {
+        $deleted_codes[] = $row['equipment_code'];
     }
-    
-    // ถ้ารายการ id มีอยู่จริง
-    if (count($clean_ids) > 0) {
-        $ids_for_query = implode(',', $clean_ids);
-        $sql = "DELETE FROM equipments WHERE id IN ($ids_for_query)";
+    $codes_string = implode(', ', $deleted_codes);
+    $count = count($deleted_codes);
+
+    if ($count > 0) {
+        // สั่งลบข้อมูลรวดเดียว
+        $sql_delete = "DELETE FROM equipments WHERE id IN ($id_list)";
         
-        if ($conn->query($sql) === TRUE) {
-            header("Location: equipments.php?msg=delete_success");
-            exit();
+        if ($conn->query($sql_delete) === TRUE) {
+            
+            // บันทึก Log แค่บรรทัดเดียว สรุปยอดรวดเดียว!
+            $username = $_SESSION['username'];
+            save_log($conn, $username, 'ลบข้อมูล', "ลบครุภัณฑ์แบบกลุ่มจำนวน {$count} รายการ (รหัส: {$codes_string})");
+
+            echo "<script>alert('ลบข้อมูล {$count} รายการเรียบร้อยแล้ว'); window.location.href='equipments.php';</script>";
         } else {
-            echo "เกิดข้อผิดพลาดในการลบข้อมูล: " . $conn->error;
-            exit();
+            echo "<script>alert('เกิดข้อผิดพลาด: " . $conn->error . "'); window.history.back();</script>";
         }
-    } else {
-        header("Location: equipments.php?msg=error");
-        exit();
     }
 } else {
-    header("Location: equipments.php");
-    exit();
+    echo "<script>alert('กรุณาเลือกรายการที่ต้องการลบอย่างน้อย 1 รายการ'); window.history.back();</script>";
 }
 ?>

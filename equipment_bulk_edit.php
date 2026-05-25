@@ -1,4 +1,12 @@
 <?php
+session_start(); // เปิด Session เพื่อตรวจเช็กสิทธิ์และดึงชื่อคนแก้ไขไปลงประวัติ
+
+// ป้องกันคนแอบดึง URL นี้มาเปิดใช้งานโดยไม่ผ่านประตูเข้าล็อกอิน
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 require_once 'db_connect.php';
 
 $ids_str = isset($_POST['selected_ids']) ? $_POST['selected_ids'] : '';
@@ -51,8 +59,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_update'])) {
     }
 
     if (!empty($updates)) {
+        // เพิ่มการบันทึกเวลาอัปเดตข้อมูลเข้าไปด้วย
+        $updates[] = "updated_at = NOW()";
+        
+        // ดึงรหัสครุภัณฑ์ทั้งหมดที่ถูกเลือกออกมาก่อน สั่ง UPDATE เพื่อเอาไปทำ Log
+        $code_query = $conn->query("SELECT equipment_code FROM equipments WHERE id IN ($ids_str)");
+        $edited_codes = [];
+        if ($code_query) {
+            while ($c_row = $code_query->fetch_assoc()) {
+                $edited_codes[] = $c_row['equipment_code'];
+            }
+        }
+        $codes_string = implode(', ', $edited_codes);
+
         $sql = "UPDATE equipments SET " . implode(', ', $updates) . " WHERE id IN ($ids_str)";
         if ($conn->query($sql)) {
+            
+            // 🌟 3. สั่งบันทึกประวัติแก้ไขกลุ่มลงตาราง activity_logs 
+            $username = $_SESSION['username'];
+            save_log($conn, $username, 'แก้ไขข้อมูล', "แก้ไขข้อมูลแบบกลุ่มจำนวน {$count} รายการ (รหัส: {$codes_string})");
+
             header("Location: equipments.php?msg=bulk_success");
             exit;
         }
