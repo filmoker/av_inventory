@@ -91,8 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_update'])) {
 
 $result_categories = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
 $result_locations = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
-
-$brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
+$brand_query = "SELECT DISTINCT TRIM(brand) AS brand FROM equipments WHERE brand IS NOT NULL AND TRIM(brand) != '' ORDER BY brand ASC";
 $brand_result = $conn->query($brand_query);
 
 // ดึงข้อมูลหน่วยงานเพื่อมาแสดงใน Dropdown และ Sidebar
@@ -239,8 +238,8 @@ if ($result_units && $result_units->num_rows > 0) {
                                         <label class="form-label fw-bold">วิทยาเขต</label>
                                         <select name="campus" class="form-select">
                                             <option value="">-- ไม่เปลี่ยนแปลง --</option>
-                                            <option value="ประสานมิตร">มศว ประสานมิตร</option>
-                                            <option value="องครักษ์">มศว องครักษ์</option>
+                                            <option value="ประสานมิตร">ประสานมิตร</option>
+                                            <option value="องครักษ์">องครักษ์</option>
                                         </select>
                                     </div>
 

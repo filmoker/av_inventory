@@ -16,7 +16,7 @@ if (!isset($_GET['id']) && !isset($_POST['id'])) {
 
 $cat_result = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
 $loc_result = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
-$brand_query = "SELECT DISTINCT brand FROM equipments WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC";
+$brand_query = "SELECT DISTINCT TRIM(brand) AS brand FROM equipments WHERE brand IS NOT NULL AND TRIM(brand) != '' ORDER BY brand ASC";
 $brand_result = $conn->query($brand_query);
 
 $units = [];
