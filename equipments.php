@@ -205,7 +205,7 @@ if ($units_result && $units_result->num_rows > 0) {
                         <?php if($loc_param): ?><input type="hidden" name="location" value="<?php echo $loc_param; ?>"><?php endif; ?>
                         
                         <div class="input-group input-group-sm" style="width: 200px;">
-                            <input type="text" name="search" class="form-control" placeholder="ค้นหา..." value="<?php echo htmlspecialchars($search_param); ?>">
+                            <input type="text" id="searchInput" class="form-control" placeholder="ค้นหา...">
                             <button class="btn btn-dark" type="submit"><i class="fas fa-search"></i></button>
                         </div>
                         
@@ -373,9 +373,11 @@ if ($units_result && $units_result->num_rows > 0) {
 
 <script>
 $(document).ready(function() {
-    $('#equipmentTable').DataTable({
+    // 1. นำ DataTables ไปเก็บไว้ในตัวแปร table และเปิดการตั้งค่าค้นหา
+    var table = $('#equipmentTable').DataTable({
         "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
-        "searching": false,   
+        "searching": true,
+        "dom": 'lrtip',
         "paging": true,       
         "ordering": true,     
         "order": [[ 1, "asc" ]], 
@@ -383,8 +385,23 @@ $(document).ready(function() {
             { "orderable": false, "targets": [0, 13] }
         ]
     });
+
+    // 2. ฟังก์ชัน Live Search: เมื่อพิมพ์ข้อความ ระบบจะกรองข้อมูลในตารางทันที
+    $('#searchInput').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+
+    // 3. ป้องกันปัญหา: กด Enter แล้วหน้าเว็บรีเฟรช (โหลดใหม่)
+    $('#searchInput').on('keypress', function(e) {
+        if (e.which == 13) {
+            e.preventDefault(); 
+        }
+    });
 });
 
+// ====================================================
+// ส่วนโค้ด Bulk Delete / Bulk Edit 
+// ====================================================
 const checkAll = document.getElementById('check-all');
 const bulkBar = document.getElementById('bulk-action-bar');
 const countSpan = document.getElementById('selected-count');
@@ -437,5 +454,3 @@ function bulkEdit() {
     }
 }
 </script>
-</body>
-</html>
