@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - ระบบบริหารจัดการครุภัณฑ์</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -30,6 +32,20 @@
         <div class="card-body">
             <h4 class="text-center mb-4 fw-bold text-primary">ระบบบริหารครุภัณฑ์โสตทัศนูปกรณ์</h4>
             
+            <?php 
+            // เช็กว่ามีข้อความ Error ส่งมาจากการล็อกอินผิดหรือไม่
+            if (isset($_SESSION['login_error'])) { 
+            ?>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> <strong>เข้าสู่ระบบไม่สำเร็จ!</strong> <br>
+                    <?php echo $_SESSION['login_error']; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php 
+                unset($_SESSION['login_error']); 
+            } 
+            ?>
+
             <form action="login_process.php" method="POST" autocomplete="off">
                 
                 <div class="mb-3">
@@ -51,12 +67,13 @@
         </div>
     </div>
 
-<script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
         // โค้ดนี้จะทำงานทุกครั้งที่หน้าเว็บปรากฏขึ้น (รวมถึงการกดย้อนกลับจาก History)
         window.addEventListener('pageshow', function(event) {
-            // สั่งเคลียร์ช่องกรอกข้อมูลให้ว่างเปล่า
-            document.getElementById('swu_user').value = '';
-            document.getElementById('swu_pass').value = '';
+            // สั่งเคลียร์ช่องกรอกข้อมูลให้ว่างเปล่า (เปลี่ยน ID ให้ตรงกับ HTML ด้านบน)
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         });
     </script>
 </body>
