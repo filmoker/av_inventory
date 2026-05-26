@@ -6,8 +6,10 @@ require_once 'db_connect.php';
 $login_id = strtolower(trim($_POST['username'])); 
 $login_pwd = $_POST['password'];
 
+// ตรวจสอบว่ากรอกข้อมูลครบไหม
 if (empty($login_id) || empty($login_pwd)) {
-    echo "<script>alert('กรุณากรอก Username และ Password'); window.location.replace('login.php');</script>";
+    $_SESSION['login_error'] = "กรุณากรอก Username และ Password ให้ครบถ้วน";
+    header("Location: login.php");
     exit();
 }
 
@@ -44,10 +46,6 @@ if ($ldapconn) {
                 }
             }
         }
-
-        // =========================================
-        // 2: ให้สิทธิ์เข้าเว็บทันทีโดยไม่ต้องเช็ก SQL 
-        // =========================================
         $_SESSION['is_logged_in'] = true;
         $_SESSION['username'] = $login_id;
         $_SESSION['full_name'] = $full_name; 
@@ -63,10 +61,9 @@ if ($ldapconn) {
         // =========================================
         // รหัสผ่านผิด หรือไม่มีชื่อในระบบมหาวิทยาลัย
         // =========================================
-        echo "<script>
-                alert('Username หรือ Password ไม่ถูกต้อง');
-                window.location.replace('login.php');
-              </script>";
+        $_SESSION['login_error'] = "Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง";
+        header("Location: login.php");
+        exit();
     }
     ldap_close($ldapconn);
 }
