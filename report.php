@@ -15,7 +15,7 @@ require_once 'db_connect.php';
 $filter_campus = isset($_GET['campus']) ? $_GET['campus'] : '';
 $filter_cat = isset($_GET['category']) ? $_GET['category'] : '';
 $filter_loc = isset($_GET['location']) ? $_GET['location'] : '';
-$filter_unit = isset($_GET['unit_id']) ? $_GET['unit_id'] : ''; // 🌟 เพิ่มกรองหน่วยงาน
+$filter_unit = isset($_GET['unit_id']) ? $_GET['unit_id'] : ''; 
 
 // สร้างเงื่อนไข WHERE สำหรับ SQL
 $where_clauses = [];
@@ -155,7 +155,7 @@ $all_units = $conn->query("SELECT * FROM units ORDER BY id ASC");
     </div>
 
     <div class="d-flex justify-content-between mb-3 no-print">
-        <a href="index.php" class="btn btn-dark btn-sm px-3"><i class="fas fa-arrow-left me-1"></i> กลับหน้ารายการ</a>
+        <a href="index.php" class="btn btn-dark btn-sm px-3"><i class="fas fa-arrow-left me-1"></i> กลับหน้าแรก</a>
         <div class="d-flex gap-2">
             <a href="export_excel.php?campus=<?php echo $filter_campus; ?>&unit_id=<?php echo $filter_unit; ?>&category=<?php echo $filter_cat; ?>&location=<?php echo $filter_loc; ?>" 
                class="btn btn-outline-success btn-sm px-3">
