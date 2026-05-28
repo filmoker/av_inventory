@@ -30,7 +30,7 @@
 
     <div class="card login-card p-4">
         <div class="card-body">
-            <h4 class="text-center mb-4 fw-bold text-primary">ระบบบริหารครุภัณฑ์โสตทัศนูปกรณ์</h4>
+           <h4 class="text-center mb-4 fw-bold text-primary">ระบบบริหารจัดการ<br>ครุภัณฑ์โสตทัศนูปกรณ์</h4>
             
             <?php 
             // เช็กว่ามีข้อความ Error ส่งมาจากการล็อกอินผิดหรือไม่
