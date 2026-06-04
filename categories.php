@@ -149,7 +149,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                     </thead>
                                     <tbody>
                                         <?php if ($result->num_rows > 0): ?>
-                                            <?php $i = 1; // 🌟 เพิ่มตัวนับตรงนี้ ?>
+                                            <?php $i = 1; ?>
                                             <?php while($row = $result->fetch_assoc()): ?>
                                             <tr>
                                                 <td><?php echo $i++; // 🌟 แสดงผลลำดับแถวแทน ID ?></td>
