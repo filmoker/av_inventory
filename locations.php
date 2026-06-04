@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_location'])) {
 }
 
 // ดึงข้อมูลสถานที่ทั้งหมดมาแสดง
-$sql = "SELECT * FROM locations ORDER BY id ASC";
+$sql = "SELECT * FROM locations ORDER BY location_name ASC";
 $result = $conn->query($sql);
 
 //  เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar 
