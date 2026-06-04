@@ -142,16 +142,17 @@ if ($units_result && $units_result->num_rows > 0) {
                                 <table id="categoryTable" class="table table-striped table-hover align-middle mb-0">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th width="15%">ID</th>
+                                            <th width="15%">ลำดับ</th> 
                                             <th>ชื่อหมวดหมู่</th>   
                                             <th width="25%" class="text-center">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if ($result->num_rows > 0): ?>
+                                            <?php $i = 1; // 🌟 เพิ่มตัวนับตรงนี้ ?>
                                             <?php while($row = $result->fetch_assoc()): ?>
                                             <tr>
-                                                <td><?php echo $row['id']; ?></td>
+                                                <td><?php echo $i++; // 🌟 แสดงผลลำดับแถวแทน ID ?></td>
                                                 <td><?php echo $row['category_name']; ?></td>
                                                 <td class="text-center text-nowrap">
                                                 <div class="d-flex justify-content-center gap-2">
@@ -163,7 +164,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                                         <i class="fas fa-trash"></i> ลบ
                                                     </a>
                                                 </div>
-                                            </td>
+                                                </td>
                                             </tr>
                                             <?php endwhile; ?>
                                         <?php endif; ?> </tbody>

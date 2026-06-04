@@ -45,7 +45,7 @@ if ($units_result && $units_result->num_rows > 0) {
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
         
-        /*  ล็อกความกว้าง Sidebar ไว้ที่ 220px */
+        /* ล็อกความกว้าง Sidebar ไว้ที่ 220px */
         .sidebar { background-color: #1e2b3c; min-height: 100vh; color: #fff; width: 220px; }
         .sidebar a { color: #c2c7d0; text-decoration: none; padding: 12px 20px; display: block; border-bottom: 1px solid #2b3c53; }
         .sidebar a:hover, .sidebar a.active { background-color: #2b3c53; color: #fff; }
@@ -141,16 +141,17 @@ if ($units_result && $units_result->num_rows > 0) {
                                 <table id="locationTable" class="table table-striped table-hover align-middle mb-0">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th width="15%">ID</th>
+                                            <th width="15%">ลำดับ</th>
                                             <th>ชื่อสถานที่จัดเก็บ</th>
                                             <th width="25%" class="text-center">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if ($result->num_rows > 0): ?>
+                                            <?php $i = 1; ?>
                                             <?php while($row = $result->fetch_assoc()): ?>
                                             <tr>
-                                                <td><?php echo $row['id']; ?></td>
+                                                <td><?php echo $i++; // 🌟 แสดงผลลำดับแถวแทน ID ในฐานข้อมูล ?></td>
                                                 <td><?php echo $row['location_name']; ?></td>
                                                 <td class="text-center text-nowrap">
                                                 <div class="d-flex justify-content-center gap-2">
@@ -162,7 +163,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                                         <i class="fas fa-trash"></i> ลบ
                                                     </a>
                                                 </div>
-                                            </td>
+                                                </td>
                                             </tr>
                                             <?php endwhile; ?>
                                         <?php endif; ?> </tbody>
