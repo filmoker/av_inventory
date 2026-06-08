@@ -4,7 +4,9 @@ require_once 'db_connect.php';
 // จัดการการเพิ่มข้อมูลใหม่ (เมื่อมีการ Submit ฟอร์มเพิ่มสถานที่)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_location'])) {
     $location_name = $_POST['location_name'];
-    $sql_insert = "INSERT INTO locations (location_name) VALUES ('$location_name')";
+    $campus = $_POST['campus']; 
+    
+    $sql_insert = "INSERT INTO locations (location_name, campus) VALUES ('$location_name', '$campus')";
     if ($conn->query($sql_insert) === TRUE) {
         echo "<script>alert('เพิ่มสถานที่จัดเก็บใหม่สำเร็จ!'); window.location.href='locations.php';</script>";
     } else {
@@ -12,11 +14,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_location'])) {
     }
 }
 
-// ดึงข้อมูลสถานที่ทั้งหมดมาแสดง
-$sql = "SELECT * FROM locations ORDER BY location_name ASC";
+// 🌟 1. รับค่า Filter วิทยาเขตจากการกดปุ่ม
+$filter_campus = isset($_GET['campus']) ? $_GET['campus'] : '';
+
+// 🌟 2. ดึงข้อมูลสถานที่ (ถ้ามีการเลือก Filter ก็ให้ดึงเฉพาะวิทยาเขตนั้น)
+$sql = "SELECT * FROM locations ";
+if ($filter_campus != '') {
+    $sql .= "WHERE campus = '" . $conn->real_escape_string($filter_campus) . "' ";
+}
+$sql .= "ORDER BY campus ASC, location_name ASC";
 $result = $conn->query($sql);
 
-//  เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar 
+// เตรียมข้อมูลหน่วยงานสำหรับแสดงใน Sidebar 
 $units = [];
 $units_result = @$conn->query("SELECT * FROM units ORDER BY id ASC");
 if ($units_result && $units_result->num_rows > 0) {
@@ -125,6 +134,14 @@ if ($units_result && $units_result->num_rows > 0) {
                         <div class="card-body">
                             <form action="locations.php" method="POST">
                                 <div class="mb-3">
+                                    <label class="form-label">วิทยาเขต <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="campus" required>
+                                        <option value="" disabled selected>-- เลือกวิทยาเขต --</option>
+                                        <option value="ประสานมิตร">ประสานมิตร</option>
+                                        <option value="องครักษ์">องครักษ์</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">ชื่อสถานที่จัดเก็บ <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="location_name" required placeholder="เช่น ห้องประชุม A">
                                 </div>
@@ -136,14 +153,25 @@ if ($units_result && $units_result->num_rows > 0) {
 
                 <div class="col-md-8">
                     <div class="card shadow-sm border-0">
+                        
+                        <div class="card-header bg-white pt-3 pb-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title m-0">รายการสถานที่</h5>
+                            <div class="btn-group shadow-sm">
+                                <a href="locations.php" class="btn btn-sm <?= empty($filter_campus) ? 'btn-dark' : 'btn-outline-dark' ?>">ทั้งหมด</a>
+                                <a href="locations.php?campus=ประสานมิตร" class="btn btn-sm <?= $filter_campus == 'ประสานมิตร' ? 'btn-danger' : 'btn-outline-danger' ?>">ประสานมิตร</a>
+                                <a href="locations.php?campus=องครักษ์" class="btn btn-sm <?= $filter_campus == 'องครักษ์' ? 'btn-secondary' : 'btn-outline-secondary' ?>">องครักษ์</a>
+                            </div>
+                        </div>
+
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table id="locationTable" class="table table-striped table-hover align-middle mb-0">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th width="15%">ลำดับ</th>
+                                            <th width="10%">ลำดับ</th>
+                                            <th width="20%">วิทยาเขต</th>
                                             <th>ชื่อสถานที่จัดเก็บ</th>
-                                            <th width="25%" class="text-center">จัดการ</th>
+                                            <th width="20%" class="text-center">จัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -151,7 +179,14 @@ if ($units_result && $units_result->num_rows > 0) {
                                             <?php $i = 1; ?>
                                             <?php while($row = $result->fetch_assoc()): ?>
                                             <tr>
-                                                <td><?php echo $i++; // 🌟 แสดงผลลำดับแถวแทน ID ในฐานข้อมูล ?></td>
+                                                <td><?php echo $i++; ?></td>
+                                                <td>
+                                                    <?php if($row['campus'] == 'ประสานมิตร'): ?>
+                                                        <span class="badge bg-danger text-white">ประสานมิตร</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary text-white">องครักษ์</span>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><?php echo $row['location_name']; ?></td>
                                                 <td class="text-center text-nowrap">
                                                 <div class="d-flex justify-content-center gap-2">
@@ -166,7 +201,8 @@ if ($units_result && $units_result->num_rows > 0) {
                                                 </td>
                                             </tr>
                                             <?php endwhile; ?>
-                                        <?php endif; ?> </tbody>
+                                        <?php endif; ?> 
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -191,7 +227,7 @@ if ($units_result && $units_result->num_rows > 0) {
             },
             "order": [], 
             "columnDefs": [
-                { "orderable": false, "targets": [2] } 
+                { "orderable": false, "targets": [3] } 
             ]
         });
     });

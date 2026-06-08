@@ -224,22 +224,40 @@ if ($result_units && $result_units->num_rows > 0) {
                                             <?php endwhile; ?>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold">สถานที่จัดเก็บ</label>
-                                        <select name="location_id" class="form-select">
-                                            <option value="">-- ไม่เปลี่ยนแปลง --</option>
-                                            <?php while($l = $result_locations->fetch_assoc()): ?>
-                                                <option value="<?php echo $l['id']; ?>"><?php echo htmlspecialchars($l['location_name']); ?></option>
-                                            <?php endwhile; ?>
-                                        </select>
-                                    </div>
-                                    
+
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">วิทยาเขต</label>
                                         <select name="campus" class="form-select">
                                             <option value="">-- ไม่เปลี่ยนแปลง --</option>
                                             <option value="ประสานมิตร">ประสานมิตร</option>
                                             <option value="องครักษ์">องครักษ์</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">สถานที่จัดเก็บ</label>
+                                        <select name="location_id" class="form-select">
+                                            <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                                            
+                                            <optgroup label="ประสานมิตร">
+                                                <?php 
+                                                $sql_psm = "SELECT * FROM locations WHERE campus = 'ประสานมิตร' ORDER BY location_name ASC";
+                                                $res_psm = $conn->query($sql_psm);
+                                                while($loc = $res_psm->fetch_assoc()) {
+                                                    echo "<option value='{$loc['id']}'>{$loc['location_name']}</option>";
+                                                }
+                                                ?>
+                                            </optgroup>
+                                            
+                                            <optgroup label="องครักษ์">
+                                                <?php 
+                                                $sql_okr = "SELECT * FROM locations WHERE campus = 'องครักษ์' ORDER BY location_name ASC";
+                                                $res_okr = $conn->query($sql_okr);
+                                                while($loc = $res_okr->fetch_assoc()) {
+                                                    echo "<option value='{$loc['id']}'>{$loc['location_name']}</option>";
+                                                }
+                                                ?>
+                                            </optgroup>
                                         </select>
                                     </div>
 

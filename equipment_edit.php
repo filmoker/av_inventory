@@ -298,15 +298,36 @@ $display_code = preg_replace('/^สห\./', '', $eq['equipment_code']);
                                     <?php endforeach; ?>
                                 </select>
                             </div>
+                            
                             <div class="col-md-3 mb-3">
                                 <label for="location_id" class="form-label">สถานที่จัดเก็บ</label>
                                 <select class="form-select" id="location_id" name="location_id">
                                     <option value="">-- เลือกสถานที่ --</option>
-                                    <?php while($row = $loc_result->fetch_assoc()): ?>
-                                        <option value="<?php echo $row['id']; ?>" <?php echo ($eq['location_id'] == $row['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($row['location_name']); ?></option>
-                                    <?php endwhile; ?>
+                                    
+                                    <optgroup label="ประสานมิตร">
+                                        <?php 
+                                        $sql_psm = "SELECT * FROM locations WHERE campus = 'ประสานมิตร' ORDER BY location_name ASC";
+                                        $res_psm = $conn->query($sql_psm);
+                                        while($loc = $res_psm->fetch_assoc()) {
+                                            $selected = ($eq['location_id'] == $loc['id']) ? 'selected' : '';
+                                            echo "<option value='{$loc['id']}' {$selected}>{$loc['location_name']}</option>";
+                                        }
+                                        ?>
+                                    </optgroup>
+                                    
+                                    <optgroup label="องครักษ์">
+                                        <?php 
+                                        $sql_okr = "SELECT * FROM locations WHERE campus = 'องครักษ์' ORDER BY location_name ASC";
+                                        $res_okr = $conn->query($sql_okr);
+                                        while($loc = $res_okr->fetch_assoc()) {
+                                            $selected = ($eq['location_id'] == $loc['id']) ? 'selected' : '';
+                                            echo "<option value='{$loc['id']}' {$selected}>{$loc['location_name']}</option>";
+                                        }
+                                        ?>
+                                    </optgroup>
                                 </select>
                             </div>
+                            
                             <div class="col-md-3 mb-3">
                                 <label for="responsible_person" class="form-label">ผู้ครอบครอง</label>
                                 <input type="text" class="form-control" id="responsible_person" name="responsible_person" value="<?php echo htmlspecialchars($eq['responsible_person']); ?>">
