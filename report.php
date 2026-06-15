@@ -72,8 +72,8 @@ $res_all = $conn->query($sql_all);
 
 // ดึงข้อมูล Master ข้อมูลสำหรับสร้าง Dropdown
 $all_cats = $conn->query("SELECT * FROM categories ORDER BY category_name ASC");
-$all_locs = $conn->query("SELECT * FROM locations ORDER BY location_name ASC");
 $all_units = $conn->query("SELECT * FROM units ORDER BY id ASC");
+// 🌟 นำ $all_locs ออกไป เพราะเราจะ Query แยกตามวิทยาเขตที่ด้านล่างแทน
 ?>
 
 <!DOCTYPE html>
@@ -135,17 +135,36 @@ $all_units = $conn->query("SELECT * FROM units ORDER BY id ASC");
                         <?php endwhile; ?>
                     </select>
                 </div>
+
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold">สถานที่</label>
+                    <label class="form-label small fw-bold">สถานที่จัดเก็บ</label>
                     <select name="location" class="form-select form-select-sm">
                         <option value="">-- ทั้งหมด --</option>
-                        <?php $all_locs->data_seek(0); while($lc = $all_locs->fetch_assoc()): ?>
-                            <option value="<?php echo $lc['id']; ?>" <?php if($filter_loc==$lc['id']) echo 'selected'; ?>>
-                                <?php echo $lc['location_name']; ?>
-                            </option>
-                        <?php endwhile; ?>
+                        
+                        <optgroup label=" ประสานมิตร">
+                            <?php 
+                            $sql_psm = "SELECT * FROM locations WHERE campus = 'ประสานมิตร' ORDER BY location_name ASC";
+                            $res_psm = $conn->query($sql_psm);
+                            while($loc = $res_psm->fetch_assoc()) {
+                                $selected = ($filter_loc == $loc['id']) ? 'selected' : '';
+                                echo "<option value='{$loc['id']}' {$selected}>{$loc['location_name']}</option>";
+                            }
+                            ?>
+                        </optgroup>
+                        
+                        <optgroup label=" องครักษ์">
+                            <?php 
+                            $sql_okr = "SELECT * FROM locations WHERE campus = 'องครักษ์' ORDER BY location_name ASC";
+                            $res_okr = $conn->query($sql_okr);
+                            while($loc = $res_okr->fetch_assoc()) {
+                                $selected = ($filter_loc == $loc['id']) ? 'selected' : '';
+                                echo "<option value='{$loc['id']}' {$selected}>{$loc['location_name']}</option>";
+                            }
+                            ?>
+                        </optgroup>
                     </select>
                 </div>
+
                 <div class="col-md-2 d-flex gap-1 align-items-end">
                     <button type="submit" class="btn btn-primary btn-sm w-100">กรอง</button>
                     <a href="report.php" class="btn btn-secondary btn-sm"><i class="fas fa-sync"></i></a>
