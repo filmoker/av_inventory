@@ -74,7 +74,7 @@ if ($units_res && $units_res->num_rows > 0) {
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                    <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                    <h5 class="m-0"><i class="fas fa-boxes"></i> AMDAT</h5>
                 </a>
             </div>
             <nav class="mt-3">

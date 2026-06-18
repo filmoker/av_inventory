@@ -122,7 +122,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
         
         <div class="sidebar p-0 flex-shrink-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                <h5 class="m-0"><i class="fas fa-boxes"></i> AMDAT </h5>
             </div>
             <nav class="mt-3">
                 <a href="index.php" class="<?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
@@ -174,7 +174,7 @@ $broken_link = "equipments.php?filter=" . urlencode("ชำรุด") . ($base_
 
         <div class="p-4 flex-grow-1" style="min-width: 0; overflow-x: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4>ระบบบริหารจัดการครุภัณฑ์โสตทัศนูปกรณ์ v.1.2.0</h4>
+                <h4>Asset Management System of Digital Academic Technology v.1.2.0</h4>
                 
                 <div class="dropdown">
                     <button class="btn btn-light dropdown-toggle text-black border-0 shadow-sm rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">

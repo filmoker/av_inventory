@@ -63,7 +63,7 @@ if (isset($_GET['id'])) {
     <div class="row">
         <div class="col-md-2 sidebar p-0">
             <div class="p-4 text-center border-bottom border-secondary">
-                <h5 class="m-0"><i class="fas fa-boxes"></i> ระบบครุภัณฑ์</h5>
+                <h5 class="m-0"><i class="fas fa-boxes"></i> AMDAT</h5>
             </div>
             <nav class="mt-3">
                 <a href="index.php"><i class="fas fa-home me-2"></i> หน้าแรก</a>
