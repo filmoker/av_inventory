@@ -288,7 +288,9 @@ if ($units_result && $units_result->num_rows > 0) {
                                         <input type="checkbox" value="<?php echo $row['id']; ?>" class="form-check-input item-checkbox">
                                     </td>
                                     <td class="text-center text-muted"><?php echo $i++; ?></td>
-                                    <td class="fw-bold"><?php echo htmlspecialchars($row['equipment_code']); ?></td>
+                                    
+                                    <td class="fw-bold"><?php echo htmlspecialchars(preg_replace('/^สห\./', '', $row['equipment_code'])); ?></td>
+                                    
                                     <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
                                     <td><?php echo (htmlspecialchars($row['brand']) ?: '-') . " / " . (htmlspecialchars($row['model']) ?: '-'); ?></td>
                                     
@@ -297,7 +299,7 @@ if ($units_result && $units_result->num_rows > 0) {
                                     <td class="text-center"><span class="badge badge-age text-nowrap"><?php echo trim($age_text); ?></span></td>
                                     
                                     <td class="text-center">
-                                        <span class="badge <?php echo ($row['campus'] == 'ประสานมิตร') ? 'bg-danger' : 'bg-primary'; ?>">
+                                        <span class="badge <?php echo ($row['campus'] == 'ประสานมิตร') ? 'bg-danger' : 'bg-secondary'; ?>">
                                             <?php echo htmlspecialchars($row['campus']) ?: '-'; ?>
                                         </span>
                                     </td>
@@ -454,3 +456,5 @@ function bulkEdit() {
     }
 }
 </script>
+</body>
+</html>
