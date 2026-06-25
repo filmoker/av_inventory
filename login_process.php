@@ -1,6 +1,6 @@
 <?php
 session_start();
-// 1. ดึงไฟล์เชื่อมต่อฐานข้อมูลมา (เผื่อต้องใช้ในอนาคต)
+// 1. ดึงไฟล์เชื่อมต่อฐานข้อมูลมา
 require_once 'db_connect.php'; 
 
 $login_id = strtolower(trim($_POST['username'])); 
@@ -13,9 +13,29 @@ if (empty($login_id) || empty($login_pwd)) {
     exit();
 }
 
-// ตั้งค่า LDAP
+// ==========================================
+// โหมดนักพัฒนา (Developer Bypass) 
+// สำหรับล็อกอินทำงานที่บ้านโดยไม่ต้องต่อ VPN มศว
+// วิธีใช้: พิมพ์ Username -> dev | Password -> 1234
+// ==========================================
+if ($login_id === 'dev' && $login_pwd === '1234') {
+    $_SESSION['is_logged_in'] = true;
+    $_SESSION['username'] = 'dev_admin';
+    $_SESSION['full_name'] = 'ผู้พัฒนาระบบ (โหมดทดสอบ)'; 
+    
+    // บันทึกประวัติล็อกอิน
+    save_log($conn, 'dev_admin', 'เข้าสู่ระบบ', 'เข้าใช้งานระบบผ่านโหมดทดสอบ (Bypass)');
+    
+    // ส่งตรงเข้าหน้าหลักทันที
+    header("Location: index.php");
+    exit();
+}
+// ==========================================
+
+
+// ตั้งค่า LDAP (สำหรับใช้งานจริงตอนอยู่ มศว หรือต่อ VPN)
 $ldaprdn = "uid={$login_id},dc=swu,dc=ac,dc=th";
-$ldapconn = ldap_connect("ldap://ldap.swu.ac.th") or die("Could not connect to LDAP server.");
+$ldapconn = @ldap_connect("ldap://ldap.swu.ac.th") or die("Could not connect to LDAP server.");
 
 if ($ldapconn) {
     // 2. ตรวจสอบรหัสผ่านกับ LDAP
@@ -23,7 +43,7 @@ if ($ldapconn) {
 
     if ($ldapbind) {
         // =========================================
-        // 1: ล็อกอินผ่าน LDAP ของมหาลัยสำเร็จ!
+        // ล็อกอินผ่าน LDAP ของมหาลัยสำเร็จ!
         // =========================================
         $full_name = $login_id; // ตั้งค่าเริ่มต้นเป็นรหัสไว้ก่อน
         
@@ -46,6 +66,8 @@ if ($ldapconn) {
                 }
             }
         }
+        
+        // ตั้งค่า Session สำหรับผู้ใช้จริง
         $_SESSION['is_logged_in'] = true;
         $_SESSION['username'] = $login_id;
         $_SESSION['full_name'] = $full_name; 
@@ -59,9 +81,9 @@ if ($ldapconn) {
 
     } else {
         // =========================================
-        // รหัสผ่านผิด หรือไม่มีชื่อในระบบมหาวิทยาลัย
+        // รหัสผ่านผิด หรือไม่ได้ต่อ VPN (โดน Firewall บล็อก)
         // =========================================
-        $_SESSION['login_error'] = "Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง";
+        $_SESSION['login_error'] = "Username หรือ Password ไม่ถูกต้อง (หรือคุณอาจไม่ได้เชื่อมต่อเครือข่ายของมหาวิทยาลัย)";
         header("Location: login.php");
         exit();
     }
