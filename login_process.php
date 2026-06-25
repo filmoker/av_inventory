@@ -23,9 +23,6 @@ if ($login_id === 'dev' && $login_pwd === '1234') {
     $_SESSION['username'] = 'dev_admin';
     $_SESSION['full_name'] = 'ผู้พัฒนาระบบ (โหมดทดสอบ)'; 
     
-    // บันทึกประวัติล็อกอิน
-    save_log($conn, 'dev_admin', 'เข้าสู่ระบบ', 'เข้าใช้งานระบบผ่านโหมดทดสอบ (Bypass)');
-    
     // ส่งตรงเข้าหน้าหลักทันที
     header("Location: index.php");
     exit();
